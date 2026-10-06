@@ -21,6 +21,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
+demo = ["streamlit"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mine_copilot"]

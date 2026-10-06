@@ -84,3 +84,9 @@ The first run scored 0.96 and surfaced two agent bugs, both fixed:
   `ground()` strips list markers first; the eval re-grounds cached traces so checker fixes need no
   new API calls.
 After the fixes: 24/24 on every metric. The set is small and in-house, so it's a regression gate.
+
+## Demo UI is Streamlit, logic lives outside it
+Streamlit is an optional `[demo]` extra so the core install stays lean. `app.py` only lays out the
+page; token/latency metering, error messages and the eval-report summary live in `demo.py` and are
+unit-tested without Streamlit. Tests inject `provider`/`tools` via `st.session_state`, so
+`streamlit.testing` drives the real render path with `FakeProvider` and the fixture DB, offline.

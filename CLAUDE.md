@@ -24,7 +24,9 @@ Avathon "Associate AI Engineer, Physical AI" interview. One-day build, Claude Pr
 
 - M5: `evals/eval_agent.py` (rule-based scoring, per-model cache in `evals/runs/`, `--rescore` offline, token tracking) → `evals/reports/agent.md`. gemini-3.8-flash on a paid key: 24/24 answer acc, citation recall, refusal acc, grounded (first run 0.96; fixed empty final answer + list-marker grounding false positive). 36 tests passing.
 
-**Next:** M6.
+- M6: Streamlit demo `src/mine_copilot/app.py` (`pip install -e ".[demo]"`; `streamlit run src/mine_copilot/app.py`) + UI-free helpers in `demo.py` (Metered tokens/latency, friendly errors, eval-report summary). Example buttons per question type, refusal warning, grounding badge, cited-section expanders with full text, tool trace. `tests/test_demo.py` runs the app via `streamlit.testing` + FakeProvider (43 tests passing). Live smoke: 4/4 example buttons correct + grounded (2.5–12.6s each, ~11.7k in / 2k out tokens total).
+
+**Next:** M7 README polish (architecture diagram, eval table, screenshots).
 
 **Quota:** free tier is 20 req/day per model (3.8-flash and 2.5-flash); billing now enabled ($5 credit). M5 full run ≈ 108k in / 13k out tokens.
 
