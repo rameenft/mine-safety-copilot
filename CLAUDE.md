@@ -32,4 +32,4 @@ Gemini (free tier, `google-genai`) behind `llm.py` provider interface · MCP Pyt
 ## Status
 **Done:** Milestone 0 — venv, skeleton, `.gitignore`, `.env.example`, `pyproject.toml`, CLAUDE.md, docs stubs, git init.
 **Next:** Milestone 1 — Data (download Accidents/Mines zips + eCFR Part 56, filter, load SQLite, fixtures, DATA_CARD).
-**Decisions:** see `docs/DECISIONS.md`. GitHub: `rameenft/mine-safety-copilot` (public).
+**Decisions:** see `docs/DECISIONS.md`. Model `gemini-3.8-flash` (key verified). Repo: https://github.com/rameenft/mine-safety-copilot (public, pushed).
