@@ -16,6 +16,8 @@ Avathon "Associate AI Engineer, Physical AI" interview. One-day build, Claude Pr
 - M0: venv, skeleton, config, git, public repo https://github.com/rameenft/mine-safety-copilot. Model `gemini-3.8-flash` (key verified).
 - M1: `ingest/` (accidents.py, regulations.py, build.py, fixtures.py) → `data/processed/mine_copilot.db` with tables `accidents` (3,000), `mines` (1,410), `regulations` (422 sections). Fixtures + 10 passing tests. `docs/DATA_CARD.md`.
 
-**Next:** M2 — golden test set `evals/golden_set.yaml` (20–25 Qs, verified against the real DB).
+- M2: `evals/golden_set.yaml` — 24 Qs (9 reg / 7 agg / 4 hybrid / 4 refuse), generated + verified by `evals/build_golden.py` (facts verbatim in section text; numbers from SQL). `tests/test_golden_set.py` (13 tests passing).
+
+**Next:** M3 — retrieval index over `chunk_section()` chunks.
 
 **Decisions:** see `docs/DECISIONS.md`. Rebuild data: `python -m mine_copilot.ingest.build`. `chunk_section()` (1,500 chars, paragraph split) is ready for M3 indexing. `SEVERITY` column is the severity filter (fatal / permanent_disability / lost_time / restricted_duty / no_lost_time / other).

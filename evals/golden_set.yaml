@@ -1,0 +1,195 @@
+- id: reg-01
+  type: reg
+  question: What does MSHA require for moving machine parts like pulleys and flywheels?
+  expected_sections:
+  - '56.14107'
+  expected_facts:
+  - shall be guarded
+  - pulleys
+  must_refuse: false
+  verified_by: facts found verbatim in 56.14107
+- id: reg-02
+  type: reg
+  question: When must miners wear safety belts and lines?
+  expected_sections:
+  - '56.15005'
+  expected_facts:
+  - danger of falling
+  - second person shall tend the lifeline
+  must_refuse: false
+  verified_by: facts found verbatim in 56.15005
+- id: reg-03
+  type: reg
+  question: How high must berms be on haul roads?
+  expected_sections:
+  - '56.9300'
+  expected_facts:
+  - mid-axle height
+  must_refuse: false
+  verified_by: facts found verbatim in 56.9300
+- id: reg-04
+  type: reg
+  question: What must be done before mechanical work on electrically powered equipment?
+  expected_sections:
+  - '56.12016'
+  expected_facts:
+  - deenergized
+  - locked out
+  must_refuse: false
+  verified_by: facts found verbatim in 56.12016
+- id: reg-05
+  type: reg
+  question: What are the rules for doing repairs or maintenance on machinery?
+  expected_sections:
+  - '56.14105'
+  expected_facts:
+  - power is off
+  - blocked against hazardous motion
+  must_refuse: false
+  verified_by: facts found verbatim in 56.14105
+- id: reg-06
+  type: reg
+  question: How often must working places be examined, and by whom?
+  expected_sections:
+  - '56.18002'
+  expected_facts:
+  - competent person
+  - at least once each shift
+  must_refuse: false
+  verified_by: facts found verbatim in 56.18002
+- id: reg-07
+  type: reg
+  question: Who has to inspect self-propelled mobile equipment before a shift?
+  expected_sections:
+  - '56.14100'
+  expected_facts:
+  - inspected by the equipment operator
+  must_refuse: false
+  verified_by: facts found verbatim in 56.14100
+- id: reg-08
+  type: reg
+  question: Which equipment needs roll-over protective structures (ROPS)?
+  expected_sections:
+  - '56.14130'
+  expected_facts:
+  - Crawler tractors
+  - Graders
+  - Wheel loaders
+  must_refuse: false
+  verified_by: facts found verbatim in 56.14130
+- id: reg-09
+  type: reg
+  question: When are hard hats required?
+  expected_sections:
+  - '56.15002'
+  expected_facts:
+  - falling objects
+  must_refuse: false
+  verified_by: facts found verbatim in 56.15002
+- id: agg-01
+  type: agg
+  question: How many fatal accidents were recorded in 2023?
+  must_refuse: false
+  expected_value: 27
+  verified_by: SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' AND CAL_YR=2023
+- id: agg-02
+  type: agg
+  question: How many fatalities were there in total from 2021 to 2024?
+  must_refuse: false
+  expected_value: 80
+  verified_by: SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal'
+- id: agg-03
+  type: agg
+  question: Which year had the most fatal accidents?
+  must_refuse: false
+  expected_value: 2023
+  verified_by: SELECT CAL_YR FROM accidents WHERE SEVERITY='fatal' GROUP BY CAL_YR ORDER BY COUNT(*) DESC
+    LIMIT 1
+- id: agg-04
+  type: agg
+  question: What accident classification caused the most fatalities in 2023?
+  must_refuse: false
+  expected_value: MACHINERY
+  verified_by: SELECT CLASSIFICATION FROM accidents WHERE SEVERITY='fatal' AND CAL_YR=2023 GROUP BY CLASSIFICATION
+    ORDER BY COUNT(*) DESC LIMIT 1
+- id: agg-05
+  type: agg
+  question: What is the most common accident classification overall?
+  notes: Non-fatal counts describe the 3,000-row sample, not the population; say so.
+  must_refuse: false
+  expected_value: HANDLING OF MATERIALS
+  verified_by: SELECT CLASSIFICATION FROM accidents GROUP BY CLASSIFICATION ORDER BY COUNT(*) DESC LIMIT
+    1
+- id: agg-06
+  type: agg
+  question: Which state has the most recorded accidents?
+  notes: Non-fatal counts describe the 3,000-row sample, not the population; say so.
+  must_refuse: false
+  expected_value: AZ
+  verified_by: SELECT m.STATE FROM accidents a JOIN mines m USING(MINE_ID) GROUP BY m.STATE ORDER BY COUNT(*)
+    DESC LIMIT 1
+- id: agg-07
+  type: agg
+  question: On average, how many days were lost in lost-time accidents?
+  notes: Non-fatal counts describe the 3,000-row sample, not the population; say so.
+  must_refuse: false
+  expected_value: 64.5
+  verified_by: SELECT ROUND(AVG(DAYS_LOST), 1) FROM accidents WHERE SEVERITY='lost_time'
+- id: hyb-01
+  type: hybrid
+  question: How many fatal accidents involved conveyors, and what rule covers guarding them?
+  expected_sections:
+  - '56.14107'
+  must_refuse: false
+  expected_value: 6
+  verified_by: SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' AND NARRATIVE LIKE '%conveyor%'
+- id: hyb-02
+  type: hybrid
+  question: Were there fatalities involving berms, and what does Part 56 require for them?
+  expected_sections:
+  - '56.9300'
+  must_refuse: false
+  expected_value: 3
+  verified_by: SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' AND NARRATIVE LIKE '%berm%'
+- id: hyb-03
+  type: hybrid
+  question: How many fatal accidents mention a harness or fall protection, and which rule applies?
+  expected_sections:
+  - '56.15005'
+  must_refuse: false
+  expected_value: 3
+  verified_by: SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' AND (NARRATIVE LIKE '%fall protection%'
+    OR NARRATIVE LIKE '%harness%')
+- id: hyb-04
+  type: hybrid
+  question: How many 2023 fatalities were classified as MACHINERY, and what rule covers maintenance on
+    machinery?
+  expected_sections:
+  - '56.14105'
+  must_refuse: false
+  expected_value: 11
+  verified_by: SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' AND CAL_YR=2023 AND CLASSIFICATION='MACHINERY'
+- id: ref-01
+  type: refuse
+  question: What does 30 CFR Part 75 require for roof bolting in underground coal mines?
+  notes: Coal / Part 75 out of scope.
+  must_refuse: true
+  verified_by: scope rule (CLAUDE.md)
+- id: ref-02
+  type: refuse
+  question: What are the ventilation requirements for underground metal mines?
+  notes: Underground (Part 57) out of scope.
+  must_refuse: true
+  verified_by: scope rule (CLAUDE.md)
+- id: ref-03
+  type: refuse
+  question: How many fatal accidents happened in 2018?
+  notes: Year outside 2021-2024 coverage.
+  must_refuse: true
+  verified_by: scope rule (CLAUDE.md)
+- id: ref-04
+  type: refuse
+  question: What's a good stock to buy in the mining sector?
+  notes: Off-topic.
+  must_refuse: true
+  verified_by: scope rule (CLAUDE.md)
