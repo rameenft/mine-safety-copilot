@@ -22,3 +22,6 @@ logs/
 .DS_Store
 .vscode/
 .idea/
+
+# Eval run caches (model outputs; reports in evals/reports are committed)
+evals/runs/

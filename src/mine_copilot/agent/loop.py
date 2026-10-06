@@ -13,6 +13,7 @@ from mine_copilot.agent.tools import TOOL_SPECS, YEARS, Tools, call_tool
 from mine_copilot.llm import Provider
 
 MAX_TOOL_TURNS = 5
+FINAL_NUDGE = "Tool budget used up. Answer now using only the tool results above."
 REFUSAL_PREFIX = "Out of scope:"
 
 SYSTEM = f"""You are Mine Safety Copilot, a safety assistant for US SURFACE metal/nonmetal mines.
@@ -34,6 +35,7 @@ Be concise: a direct answer first, then the supporting citation(s)."""
 
 SECTION_RE = re.compile(r"56\.\d+[A-Z]?\b")
 DOC_RE = re.compile(r"\b\d{12}\b")
+LIST_MARKER_RE = re.compile(r"^\s*\d+[.)]\s", re.MULTILINE)  # "7. AZ: 363" -> 7 isn't a claim
 NUMBER_RE = re.compile(r"(?<![\w.])\d+(?:,\d{3})*(?:\.\d+)?(?![\w])")
 ALWAYS_OK = {"30", "56", "57", "75"}  # "30 CFR Part 56" etc.
 # Regulations spell small numbers out ("seven feet"); the model often writes digits.
@@ -72,7 +74,7 @@ def ground(answer: str, question: str, trace: list[dict]) -> tuple[dict, dict]:
     sections = list(dict.fromkeys(SECTION_RE.findall(answer)))
     docs = list(dict.fromkeys(DOC_RE.findall(answer)))
     # Strip cited IDs before checking loose numbers so "56.14107" isn't read as two numbers.
-    rest = DOC_RE.sub(" ", SECTION_RE.sub(" ", answer))
+    rest = LIST_MARKER_RE.sub(" ", DOC_RE.sub(" ", SECTION_RE.sub(" ", answer)))
     # SYSTEM is evidence too: it states the coverage years a refusal may repeat.
     allowed = _evidence_numbers(evidence + " " + SYSTEM) | _numbers(question) | ALWAYS_OK
     loose = sorted(_numbers(rest) - allowed, key=lambda n: float(n))
@@ -92,7 +94,9 @@ def run(question: str, provider: Provider, tools: Tools | None = None,
     trace: list[dict] = []
 
     for turn in range(max_turns + 1):
-        # Last turn: withhold tools so the model must answer with what it has.
+        # Last turn: withhold tools and say so; without the nudge Gemini can return empty text.
+        if turn == max_turns:
+            messages.append({"role": "user", "text": FINAL_NUDGE})
         reply = provider.chat(SYSTEM, messages, TOOL_SPECS if turn < max_turns else None)
         messages.append({"role": "assistant", "text": reply.text,
                          "tool_calls": reply.tool_calls, "raw": reply.raw})

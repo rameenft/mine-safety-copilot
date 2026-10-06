@@ -5,7 +5,7 @@ import sqlite3
 import pandas as pd
 import pytest
 
-from mine_copilot.agent.loop import REFUSAL_PREFIX, ground, run
+from mine_copilot.agent.loop import FINAL_NUDGE, REFUSAL_PREFIX, ground, run
 from mine_copilot.agent.tools import TOOL_SPECS, Tools, call_tool
 from mine_copilot.config import FIXTURES_DIR
 from mine_copilot.ingest.accidents import KEEP_COLUMNS, filter_accidents, load_mines, read_pipe_file
@@ -87,6 +87,12 @@ def test_ground_keeps_supported_claims():
     assert not any(bad.values())
 
 
+def test_ground_ignores_list_markers():
+    trace = [{"tool": "accident_stats", "args": {}, "result": {"rows": [["AZ", 363], ["TX", 263]]}}]
+    _, ungrounded = ground("Top states:\n1. AZ: 363\n7. TX: 263", "which state?", trace)
+    assert ungrounded["numbers"] == []
+
+
 def test_ground_flags_invented_claims():
     cites, bad = ground("There were 9 deaths; see § 56.9999 and 999999999999.", "q", TRACE)
     assert cites == {"sections": [], "documents": []}
@@ -121,4 +127,5 @@ def test_loop_forces_answer_after_max_turns(tools):
     fake = FakeProvider([call, call, Reply(text="Berms: § 56.9300.")])
     res = run("berms?", fake, tools, max_turns=2)
     assert fake.calls[-1]["tools"] is None  # tools withheld on the final turn
+    assert fake.calls[-1]["messages"][-1] == {"role": "user", "text": FINAL_NUDGE}
     assert len(res.trace) == 2 and res.citations["sections"] == ["56.9300"]

@@ -22,6 +22,7 @@ class Reply:
     text: str = ""
     tool_calls: list[dict] = field(default_factory=list)  # [{"name": str, "args": dict}]
     raw: Any = None  # provider-native turn, replayed verbatim (Gemini 3 needs thought signatures)
+    usage: dict = field(default_factory=dict)  # {"input": tokens, "output": tokens incl. thinking}
 
 
 class Provider(Protocol):
@@ -105,4 +106,7 @@ class GeminiProvider:
         text = "".join(p.text for p in parts if p.text and not p.thought)
         calls = [{"name": p.function_call.name, "args": dict(p.function_call.args or {})}
                  for p in parts if p.function_call]
-        return Reply(text=text.strip(), tool_calls=calls, raw=content)
+        u = resp.usage_metadata
+        usage = {"input": (u.prompt_token_count or 0) if u else 0,
+                 "output": ((u.candidates_token_count or 0) + (u.thoughts_token_count or 0)) if u else 0}
+        return Reply(text=text.strip(), tool_calls=calls, raw=content, usage=usage)

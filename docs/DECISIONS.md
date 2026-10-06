@@ -60,3 +60,27 @@ the native turn and is replayed verbatim; the neutral message format stays SDK-f
 Discovered during the M4 smoke test (4 Qs ≈ 15 calls). A daily-quota 429 fails fast instead of
 retrying. The M5 eval (24 Qs × ~3 calls) needs either `GEMINI_MODEL=gemini-2.5-flash` (higher free
 quota) or a run split across days.
+
+## M5 eval: deterministic scoring, no LLM judge
+`evals/eval_agent.py` scores answers with rules, not a second model. A fact counts when ≥60% of
+its content words (crudely stemmed) appear in the answer, so "must be guarded" matches "shall be
+guarded". A value has to appear as a number or whole word, and a section only counts if it
+survives the grounding check. Rules are cheap, repeatable and need no extra quota. The trade-off
+is that a paraphrase sharing few words gets marked wrong; the failures list in the report makes
+those easy to audit by hand.
+
+## Eval runs are cached per model
+`--model` picks the model per run; answers are cached in `evals/runs/<model>/` (gitignored), so a
+run cut off by quota resumes, and `--rescore` rebuilds the report offline. Calls are throttled
+(`--gap`, default 13s for the 5 requests/minute free tier).
+
+## M5 eval switched to gemini-3.8-flash (paid key)
+2.5-flash's free tier turned out to be 20 requests/day as well, so billing was enabled and the full
+run uses gemini-3.8-flash, the model M4 was built on (~108k input / 13k output tokens all-in).
+The first run scored 0.96 and surfaced two agent bugs, both fixed:
+- reg-05: the model used all 5 tool turns, then returned empty text on the tools-withheld turn.
+  The final turn now adds a user nudge ("Tool budget used up. Answer now…").
+- agg-05/06: the grounding check flagged markdown list markers ("7. TX: 263") as invented numbers.
+  `ground()` strips list markers first; the eval re-grounds cached traces so checker fixes need no
+  new API calls.
+After the fixes: 24/24 on every metric. The set is small and in-house, so it's a regression gate.

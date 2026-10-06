@@ -22,6 +22,10 @@ Avathon "Associate AI Engineer, Physical AI" interview. One-day build, Claude Pr
 
 - M4: `llm.py` (Provider protocol, GeminiProvider, FakeProvider) + `agent/` (tools.py: search_regulations, get_regulation, allow-listed accident_stats; loop.py: ≤5 tool turns, refusal prefix, grounding check; CLI `python -m mine_copilot.agent "q" [--json]`). 31 tests passing offline. Live smoke: 4/4 golden Qs correct.
 
-**Next:** M5 — run agent over golden set (answer accuracy, citation recall, refusal accuracy). Watch quota: gemini-3.8-flash free tier = 20 req/day.
+- M5: `evals/eval_agent.py` (rule-based scoring, per-model cache in `evals/runs/`, `--rescore` offline, token tracking) → `evals/reports/agent.md`. gemini-3.8-flash on a paid key: 24/24 answer acc, citation recall, refusal acc, grounded (first run 0.96; fixed empty final answer + list-marker grounding false positive). 36 tests passing.
+
+**Next:** M6.
+
+**Quota:** free tier is 20 req/day per model (3.8-flash and 2.5-flash); billing now enabled ($5 credit). M5 full run ≈ 108k in / 13k out tokens.
 
 **Decisions:** see `docs/DECISIONS.md`. Rebuild data: `python -m mine_copilot.ingest.build`; index: `python -m mine_copilot.retrieval.build` (~5 min, free-tier rate limit; `--no-embed` for BM25 only). `chunk_section()` (1,500 chars, paragraph split) is ready for M3 indexing. `SEVERITY` column is the severity filter (fatal / permanent_disability / lost_time / restricted_duty / no_lost_time / other).
