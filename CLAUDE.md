@@ -20,6 +20,8 @@ Avathon "Associate AI Engineer, Physical AI" interview. One-day build, Claude Pr
 
 - M3: `retrieval/` (index.py, embed.py, build.py) — 459 chunks, BM25 + Gemini dense (768-d .npy) + weighted RRF; default mode dense. `evals/eval_retrieval.py` → `evals/reports/retrieval.md` (dense R@5 0.92, MRR 0.92; BM25 0.85). 20 tests passing (no network).
 
-**Next:** M4 — agent/tools (search_regulations, get_regulation, SQL accident stats) + grounded answer.
+- M4: `llm.py` (Provider protocol, GeminiProvider, FakeProvider) + `agent/` (tools.py: search_regulations, get_regulation, allow-listed accident_stats; loop.py: ≤5 tool turns, refusal prefix, grounding check; CLI `python -m mine_copilot.agent "q" [--json]`). 31 tests passing offline. Live smoke: 4/4 golden Qs correct.
+
+**Next:** M5 — run agent over golden set (answer accuracy, citation recall, refusal accuracy). Watch quota: gemini-3.8-flash free tier = 20 req/day.
 
 **Decisions:** see `docs/DECISIONS.md`. Rebuild data: `python -m mine_copilot.ingest.build`; index: `python -m mine_copilot.retrieval.build` (~5 min, free-tier rate limit; `--no-embed` for BM25 only). `chunk_section()` (1,500 chars, paragraph split) is ready for M3 indexing. `SEVERITY` column is the severity filter (fatal / permanent_disability / lost_time / restricted_duty / no_lost_time / other).

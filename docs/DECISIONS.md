@@ -38,3 +38,25 @@ re-check once the M4 agent sends decomposed sub-queries instead of mixed hybrid 
 ## Embeddings stored as a .npy matrix, not a vector DB
 459 chunks × 768 floats ≈ 1.4 MB; brute-force dot product is instant. A vector DB would add a
 dependency with no benefit at this scale. Free tier caps ~100 texts/min, so the build retries on 429.
+
+## Agent: allow-listed stats tool, not text-to-SQL
+`accident_stats` takes typed filters (severity enum, year range, substring filters, narrative
+keywords ORed) plus an allow-listed `group_by`/`metric`; all values are bound parameters and the DB
+is opened read-only. Text-to-SQL is more flexible but its failures (bad joins, injection,
+silently wrong filters) are hard to detect; every golden agg/hybrid number is reachable this way.
+Errors come back as `{"error": ...}` so the model can self-correct (e.g. year 2018 → refuse).
+
+## Grounding check after the answer
+`ground()` compares every cited § section, 12-digit document number and loose number in the
+answer with tool output (plus the question and the scope years). Unsupported ones are dropped from
+`citations` and listed in `ungrounded`. Number words in regulations ("seven feet") count as
+evidence for digits. It can't verify paraphrased claims; M5's eval checks content.
+
+## Provider keeps the raw model turn
+Gemini 3 requires thought signatures on function-call turns to be sent back, so `Reply.raw` stores
+the native turn and is replayed verbatim; the neutral message format stays SDK-free.
+
+## Free tier: 20 requests/day on gemini-3.8-flash
+Discovered during the M4 smoke test (4 Qs ≈ 15 calls). A daily-quota 429 fails fast instead of
+retrying. The M5 eval (24 Qs × ~3 calls) needs either `GEMINI_MODEL=gemini-2.5-flash` (higher free
+quota) or a run split across days.
