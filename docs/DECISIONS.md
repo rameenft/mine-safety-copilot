@@ -11,3 +11,19 @@ each dependency's purpose obvious in the git history.
 ## Model: gemini-3.8-flash
 Newest stable (non-preview) Flash model on the free tier as of 2026-10-06; verified with a test call.
 Pinned in `.env` via `GEMINI_MODEL`; fallback is `gemini-2.5-flash` if free-tier quota runs out.
+
+## Surface scope = 3 subunits
+Kept STRIP/QUARRY/OPEN PIT, MILL/PREP PLANT, DREDGE. Dropped "SURFACE AT UNDERGROUND" because Part 57,
+not Part 56, governs it — mixing them would let the bot cite the wrong part.
+
+## Derived SEVERITY column
+`DEGREE_INJURY` has 11 cryptic codes ("DYS AWY FRM WRK & RESTRCTD ACT"). A 6-value `SEVERITY`
+column gives the tools a small, validatable filter vocabulary.
+
+## Regulations in SQLite too
+Sections are stored in a `regulations` table so `get_regulation(section_id)` is an exact lookup,
+independent of the vector index. Suffixed IDs (56.5001T) are kept as distinct sections.
+
+## Fixtures include must-reject rows
+The accident fixture mixes 100 valid rows with coal/2019/underground/blank-narrative rows, so the
+loader test proves each filter works instead of only checking the happy path.

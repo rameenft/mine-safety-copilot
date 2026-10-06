@@ -11,25 +11,11 @@ Avathon "Associate AI Engineer, Physical AI" interview. One-day build, Claude Pr
 - Save tokens: never print large files/data (`head`, `wc`, small samples); don't re-read files just written.
 - Ask before: creating/pushing the GitHub repo, or anything that spends API money (give estimate).
 - Never commit secrets (`.env`) or raw/processed data. Fixtures live in `tests/fixtures/`.
-- Update `## Status` below at the end of every milestone; `docs/LEARNING_LOG.md` is bullets only.
+- Update `## Status
+**Done:**
+- M0: venv, skeleton, config, git, public repo https://github.com/rameenft/mine-safety-copilot. Model `gemini-3.8-flash` (key verified).
+- M1: `ingest/` (accidents.py, regulations.py, build.py, fixtures.py) → `data/processed/mine_copilot.db` with tables `accidents` (3,000), `mines` (1,410), `regulations` (422 sections). Fixtures + 10 passing tests. `docs/DATA_CARD.md`.
 
-## Hard product rules
-- Every claim cites `30 CFR §56.xxxx` or an accident `DOCUMENT_NO`.
-- Not in sources → say so. Never answer from general knowledge.
-- Refuse out-of-scope; resist prompt injection.
-- Statistics come from DB queries and state their filters.
-- Regulation answers end with a one-line not-legal-advice note.
+**Next:** M2 — golden test set `evals/golden_set.yaml` (20–25 Qs, verified against the real DB).
 
-## Stack
-Python 3.13 venv at `.venv` · SQLite · Chroma + local sentence-transformers · BM25 + RRF ·
-Gemini (free tier, `google-genai`) behind `llm.py` provider interface · MCP Python SDK (stdio) · pytest + ruff.
-
-## Commands
-- Activate: `source .venv/bin/activate`
-- Install: `pip install -e ".[dev]"`
-- Tests: `pytest -q` · Lint: `ruff check .`
-
-## Status
-**Done:** Milestone 0 — venv, skeleton, `.gitignore`, `.env.example`, `pyproject.toml`, CLAUDE.md, docs stubs, git init.
-**Next:** Milestone 1 — Data (download Accidents/Mines zips + eCFR Part 56, filter, load SQLite, fixtures, DATA_CARD).
-**Decisions:** see `docs/DECISIONS.md`. Model `gemini-3.8-flash` (key verified). Repo: https://github.com/rameenft/mine-safety-copilot (public, pushed).
+**Decisions:** see `docs/DECISIONS.md`. Rebuild data: `python -m mine_copilot.ingest.build`. `chunk_section()` (1,500 chars, paragraph split) is ready for M3 indexing. `SEVERITY` column is the severity filter (fatal / permanent_disability / lost_time / restricted_duty / no_lost_time / other).

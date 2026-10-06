@@ -1,0 +1,104 @@
+MINE_ID|CURRENT_MINE_NAME|CURRENT_MINE_TYPE|STATE|PRIMARY_SIC
+0100011|IMERYS SYLACAUGA OPERATIONS|Surface|AL|Crushed, Broken Marble
+0100027|NATIONAL CEMENT COMPANY|Facility|AL|Cement
+0102985|Omya Alabama Plant|Facility|AL|Crushed, Broken Marble
+0200024|Freeport-McMoRan Morenci Inc.|Surface|AZ|Copper Ore NEC
+0200144|Freeport-McMoRan Sierrita Ops.|Surface|AZ|Copper Ore NEC
+0200826|Hayden Concentrator|Surface|AZ|Copper Ore NEC
+0201049|Pinto Valley Mine|Surface|AZ|Copper Ore NEC
+0300050|LIMEDALE QUARRY|Surface|AR|Crushed, Broken Limestone NEC
+0300299|Malvern Minerals Sandstone Quarry|Surface|AR|Quartz, Ground
+0301975|Wooten Sand & Gravel, Inc.|Surface|AR|Construction Sand and Gravel
+0400743|Boron Operations|Surface|CA|Boron Minerals
+0404468|Big Seam mine|Underground|CA|Gold Ore
+0404716|BLUE MOUNTAIN MINERALS|Surface|CA|Crushed, Broken Limestone NEC
+0502256|Climax Mine|Surface|CO|Molybdenum Ore
+0503935|Walstrum Quarry|Surface|CO|Crushed, Broken Granite
+0504841|Riverbend Sand and Gravel|Surface|CO|Construction Sand and Gravel
+0800051|PENNSUCO CEMENT PLANT|Facility|FL|Cement
+0800394|Ortona Sand Co|Surface|FL|Construction Sand and Gravel
+0800798|Swift Creek Mine|Surface|FL|Phosphate Rock
+0800899|Fort Pierce Mine|Surface|FL|Crushed, Broken Limestone NEC
+0800991|Fort Myers Mine|Surface|FL|Crushed, Broken Limestone NEC
+0801117|Four Corners|Surface|FL|Phosphate Rock
+0900054|Rabun Quarry|Surface|GA|Crushed, Broken Granite
+0900057|Boyd|Surface|GA|Dimension Stone NEC
+0900337|MAIN PROCESSING PLANT|Facility|GA|Kaolin and Ball Clay
+0901020|Monroe County Quarry|Surface|GA|Crushed, Broken Granite
+0901187|Echols Mill Quarry 1 and 2|Surface|GA|Dimension Stone NEC
+1100726|Shay #1 Mine|Facility|IL|Coal (Bituminous)
+1200063|Mitchell Plant|Surface|IN|Cement
+1200064|Lone Star Industries|Facility|IN|Cement
+1200068|Ardmore Stone Quarry|Surface|IN|Crushed, Broken Limestone NEC
+1200128|Arlington Hills Quarry|Surface|IN|Dimension Limestone
+1200582|US Aggregates - Thorntown Sand & Gravel|Surface|IN|Construction Sand and Gravel
+1500087|Grand Rivers Quarry|Surface|KY|Crushed, Broken Limestone NEC
+1500213|Elkhorn  Stone|Surface|KY|Crushed, Broken Limestone NEC
+1502132|Dotiki Mine|Underground|KY|Coal (Bituminous)
+1519514|D-1 Mine|Underground|KY|Coal (Bituminous)
+1600352|Gramercy Operation|Facility|LA|Alumina
+1601581|U.S. Sports Field Sand- Greensburg Plant|Surface|LA|Construction Sand and Gravel
+1700998|Watchic Pit|Surface|ME|Construction Sand and Gravel
+1800008|S W Barrick & Sons|Surface|MD|Crushed, Broken Limestone NEC
+2001763|Carl Schlegel Inc Martin Pit|Surface|MI|Construction Sand and Gravel
+2100282|Minntac Mine|Surface|MN|Iron Ore
+2102449|Minorca Mine|Surface|MN|Iron Ore
+2300188|Selma Plant Quarry & Mill|Surface|MO|Cement
+2300319|BUILDEX|Surface|MO|Common Shale
+2300889|Dredge Chesterfield|Surface|MO|Sand, Common
+2302077|Duffield Aggregate of Missouri|Surface|MO|Crushed, Broken Limestone NEC
+2400015|MONTANA CITY PLANT|Facility|MT|Cement
+2400338|Continental Mine|Surface|MT|Copper Ore NEC
+2401490|STILLWATER MINE|Underground|MT|Platinum Group Ore
+2600002|Martin Marietta - Gabbs Mine|Surface|NV|Industrial Inorg. Chemicals
+2600827|Cortez District|Surface|NV|Gold Ore
+2601043|Amargosa Quarry and Plant|Surface|NV|Clay, Ceramic, Refractory Mnls.
+2601916|Robinson Operation|Surface|NV|Copper Ore NEC
+2601942|Twin Creeks Mine|Surface|NV|Gold Ore
+2601947|Florida Canyon Mine|Surface|NV|Gold Ore
+2602818|Gold Bar|Surface|NV|Gold Ore
+2700083|SWENSON GRAY QUARRY|Surface|NH|Dimension Stone NEC
+2800009|Glen Gardner Quarry|Surface|NJ|Crushed, Broken Stone NEC
+2900473|MIMBRES PIT|Surface|NM|Construction Sand and Gravel
+2901433|Dicaperl Minerals LLC|Surface|NM|Perlite
+3000865|East Coast Mines & Materials|Surface|NY|Construction Sand and Gravel
+3002732|Cohocton Mine|Surface|NY|Construction Sand and Gravel
+3003255|Hampton Corners Mine and Retsof Bagging|Underground|NY|Salt
+3100212|Lee Creek Mine|Surface|NC|Phosphate Rock
+3101094|Lenoir|Surface|NC|Crushed, Broken Granite
+3300120|LIMA PLANT|Surface|OH|Crushed, Broken Limestone NEC
+3300161|Fairborn Cement Plant|Surface|OH|Cement
+3301994|Cargill Deicing Solutions-Cleveland Mn|Underground|OH|Salt
+3503724|Parkin Quarry|Surface|OR|Crushed, Broken Stone NEC
+3600130|Denver Quarry|Surface|PA|Crushed, Broken Limestone NEC
+3600135|LOCUST POINT QUARRY|Surface|PA|Crushed, Broken Limestone NEC
+3600217|Douglassville Quarry|Surface|PA|Crushed, Broken Traprock
+3606860|TOLAND SAND PLANT|Surface|PA|Construction Sand and Gravel
+3607416|ENLOW FORK MINE|Underground|PA|Coal (Bituminous)
+3609691|Pottsville Quarry|Surface|PA|Crushed, Broken Sandstone
+3700068|MATERIAL SAND & STONE CORP|Surface|RI|Construction Sand and Gravel
+3700243|Portable 11|Surface|RI|Construction Sand and Gravel
+3800305|HARLEYVILLE MINE & PLANT|Facility|SC|Cement
+3901505|Plant 280|Surface|SD|Construction Sand and Gravel
+4001427|Dixie Lee Quarry|Surface|TN|Crushed, Broken Limestone NEC
+4100867|TP CLAIMS 1 & 2 /ROSA BLANCA|Surface|TX|Talc
+4102113|Houston Mill|Surface|TX|Talc
+4102820|Hunter Cement Plant|Facility|TX|Cement
+4105136|Moorhead Wet Plant|Surface|TX|Construction Sand and Gravel
+4105268|Liberty Ranch|Surface|TX|Sand, Common
+4105317|Atascosa|Surface|TX|Sand, Industrial NEC
+4201927|Comstock / Mountain Lion|Surface|UT|Iron Ore
+4202700|RHEX Vernal Mine|Surface|UT|Ground Silica
+4300185|NEW HAVEN CRUSHED STONE C600|Surface|VT|Crushed, Broken Stone NEC
+4407094|Mine No. 2|Underground|VA|Coal (Bituminous)
+4503286|Columbia River Carbonates (Woodland Mill|Facility|WA|Lime
+4503547|North Bend|Surface|WA|Crushed, Broken Stone NEC
+4700119|3M - Greystone Plant|Surface|WI|Crushed, Broken Granite
+4700148|Kremlin Plant|Surface|WI|Crushed, Broken Traprock
+4703130|Portable  #1|Surface|WI|Construction Sand and Gravel
+4800152|WE Soda @ WESTVACO|Underground|WY|Trona
+4801751|Tolsa Wyoming Bentonite Plant|Facility|WY|Bentonite
+5001544|Kensington|Underground|AK|Gold Ore
+5001545|Red Dog Operations|Surface|AK|Lead-Zinc Ore
+5001616|Fort Knox Mine|Surface|AK|Gold Ore
+5100165|Keaau Quarry|Surface|HI|Crushed, Broken Stone NEC
