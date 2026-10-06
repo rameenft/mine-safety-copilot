@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mine-copilot"
+version = "0.1.0"
+description = "Grounded safety Q&A over 30 CFR Part 56 and MSHA accident records"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+# Dependencies are added milestone by milestone to keep installs lean.
+dependencies = [
+    "google-genai",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mine_copilot"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
