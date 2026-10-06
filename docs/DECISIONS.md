@@ -27,3 +27,14 @@ independent of the vector index. Suffixed IDs (56.5001T) are kept as distinct se
 ## Fixtures include must-reject rows
 The accident fixture mixes 100 valid rows with coal/2019/underground/blank-narrative rows, so the
 loader test proves each filter works instead of only checking the happy path.
+
+## Retrieval: dense default, BM25 fallback, hybrid measured
+Golden-set eval (13 reg/hybrid Qs): BM25 R@5 0.85, dense (gemini-embedding-001, 768-d) 0.92,
+equal-weight RRF hybrid only R@1 0.62, because BM25 noise dragged good dense hits down. Dense-weighted (2×)
+RRF reaches 0.85 but still trails dense, so dense is the default. BM25 runs with no API key
+(tests/CI) and section IDs named in a query ("56.14107") are pinned via exact match. n=13 is small:
+re-check once the M4 agent sends decomposed sub-queries instead of mixed hybrid questions.
+
+## Embeddings stored as a .npy matrix, not a vector DB
+459 chunks × 768 floats ≈ 1.4 MB; brute-force dot product is instant. A vector DB would add a
+dependency with no benefit at this scale. Free tier caps ~100 texts/min, so the build retries on 429.

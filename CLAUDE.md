@@ -18,6 +18,8 @@ Avathon "Associate AI Engineer, Physical AI" interview. One-day build, Claude Pr
 
 - M2: `evals/golden_set.yaml` — 24 Qs (9 reg / 7 agg / 4 hybrid / 4 refuse), generated + verified by `evals/build_golden.py` (facts verbatim in section text; numbers from SQL). `tests/test_golden_set.py` (13 tests passing).
 
-**Next:** M3 — retrieval index over `chunk_section()` chunks.
+- M3: `retrieval/` (index.py, embed.py, build.py) — 459 chunks, BM25 + Gemini dense (768-d .npy) + weighted RRF; default mode dense. `evals/eval_retrieval.py` → `evals/reports/retrieval.md` (dense R@5 0.92, MRR 0.92; BM25 0.85). 20 tests passing (no network).
 
-**Decisions:** see `docs/DECISIONS.md`. Rebuild data: `python -m mine_copilot.ingest.build`. `chunk_section()` (1,500 chars, paragraph split) is ready for M3 indexing. `SEVERITY` column is the severity filter (fatal / permanent_disability / lost_time / restricted_duty / no_lost_time / other).
+**Next:** M4 — agent/tools (search_regulations, get_regulation, SQL accident stats) + grounded answer.
+
+**Decisions:** see `docs/DECISIONS.md`. Rebuild data: `python -m mine_copilot.ingest.build`; index: `python -m mine_copilot.retrieval.build` (~5 min, free-tier rate limit; `--no-embed` for BM25 only). `chunk_section()` (1,500 chars, paragraph split) is ready for M3 indexing. `SEVERITY` column is the severity filter (fatal / permanent_disability / lost_time / restricted_duty / no_lost_time / other).
