@@ -2,21 +2,21 @@
 
 Grounded safety Q&A for US **surface metal/nonmetal** mines. It answers only from
 **30 CFR Part 56** (the federal safety standards) and **MSHA accident records (2021–2024)**.
-Every regulation it cites and every number it states is checked against tool output. It refuses
-anything outside that scope.
+It cites the exact section or record behind every claim, checks those citations in code, and
+says plainly when a question is fully or partly outside what it knows.
 
-**Why:** a safety engineer asking "what does the rule say about guarding conveyor pulleys, and how
-many lost-time injuries involved conveyors last year?" needs the exact section and the exact count.
-A plausible paraphrase isn't good enough. Wrong safety guidance is worse than no answer, so this
-project optimizes for *verifiable* answers and measured refusal, not fluency.
+**Why:** in safety, a confident wrong answer is worse than no answer. A general chatbot will invent
+a plausible regulation number. This project optimizes for *verifiable* answers: the model can
+only look things up through narrow tools, and code checks its citations afterwards. Its
+behaviour was then tested by hand against outside sources, not just by its own exam.
 
-## Architecture
+## How it works
 
 ```mermaid
 flowchart LR
     subgraph Ingest["Ingest (offline)"]
         A[MSHA Accidents.zip<br/>+ Mines.zip] --> D[(SQLite<br/>accidents · mines · regulations)]
-        B[eCFR Part 56 XML] --> D
+        B[eCFR Part 56 XML<br/>pinned 2026-10-01] --> D
     end
     subgraph Index["Retrieval index"]
         D --> C[459 chunks]
@@ -30,129 +30,108 @@ flowchart LR
         L -- accident_stats<br/>allow-listed, read-only --> D
         L --> G{Grounding check}
     end
-    G --> O[Answer + verified citations<br/>or refusal]
+    G --> O[Answer + verified citations<br/>partial answer, or refusal]
     O --> UI[Streamlit demo / CLI]
 ```
 
-- **Ingest** (`ingest/`): downloads MSHA data and the eCFR Part 56 XML and loads them into SQLite.
-  The data is filtered to surface M/NM mines, with a derived `SEVERITY` column. 3,000 accidents,
-  1,410 mines, 422 regulation sections. See [`docs/DATA_CARD.md`](docs/DATA_CARD.md).
-- **Retrieval** (`retrieval/`): sections are chunked to about 1,500 chars, then searched with BM25,
-  with dense Gemini embeddings, or with a weighted RRF hybrid. Dense is the default because it
-  scored best.
-- **Agent** (`agent/`): three tools. `search_regulations`, `get_regulation(section)` and
-  `accident_stats`, which takes typed filters with an allow-listed `group_by`/`metric` and bound
-  parameters on a read-only DB. **No text-to-SQL.**
-- **Grounding check**: after the model answers, every cited § section, document number and figure
-  is matched against tool output. Anything unsupported is stripped from the citations and flagged
-  `ungrounded`.
-- **Provider interface** (`llm.py`): `GeminiProvider` for live runs, and a scripted
-  `FakeProvider` so the whole test suite runs offline.
+1. **Data (ETL).** It downloads 275k MSHA accident records and the eCFR Part 56 XML, then filters
+   to surface metal/nonmetal mines from 2021 to 2024 and loads the result into SQLite: 3,000
+   accidents, 1,410 mines and 422 regulation sections. **Stratified sampling** keeps all 80
+   fatalities, the rare and high-value rows, and fills the rest with a seeded random sample,
+   so results are reproducible. MSHA's 11 cryptic injury codes become a 6-value `SEVERITY`
+   column the tools can filter on.
+2. **Retrieval (RAG).** **Structure-aware chunking:** sections stay whole when they're short, and
+   long ones are split on paragraph boundaries into chunks of at most 1,500 chars (20 sections
+   split, 459 chunks). Every chunk keeps its section ID, so any hit can be cited and the full
+   section fetched. Search is dense (Gemini embeddings, cosine similarity on a `.npy` matrix),
+   BM25 or an RRF hybrid. **Dense is the default because it measured best**, not by assumption.
+3. **Agent (tool calling).** Three tools: `search_regulations`, `get_regulation` and
+   `accident_stats`. The stats tool takes typed, **allow-listed** filters with bound parameters on a
+   read-only DB, so there's **no text-to-SQL**. Out-of-scope questions get a refusal. Half-in-scope
+   questions get a **partial answer** that ends with `Not covered:` and a pointer (e.g. Part 46 for
+   training, Part 60 for silica).
+4. **Grounding check.** After the model answers, code matches every cited section, document
+   number and figure against the tool output. Anything unsupported is stripped and flagged.
+5. **Safety-critical facts live in code.** Part 56 contains expired and in-force versions of the
+   dust rules (56.5001 vs 56.5001T). The model kept citing the expired ones, even when they were
+   labelled EXPIRED, because it doesn't know today's date. The tool layer now hides expired
+   sections and redirects lookups to the version in force.
 
-## Results
+## Evaluation
 
-**Agent, end to end** (30-question golden set, gemini-3.8-flash; [`evals/reports/agent.md`](evals/reports/agent.md)):
+**Golden set:** 32 questions of six types: regulation, stats, hybrid, partial, refuse, and dated
+rules. Expected facts are verified verbatim against the section text and expected numbers are
+computed by SQL. Scoring is **rule-based (no LLM judge)**, so it's deterministic and free to re-run.
 
-| type | n | answer acc | citation recall | refusal acc | grounded |
-|---|---|---|---|---|---|
-| regulation | 9 | 1.00 | 1.00 | 1.00 | 1.00 |
-| aggregate stats | 7 | 1.00 | – | 1.00 | 1.00 |
-| hybrid (rule + stats) | 4 | 0.75 | 1.00 | 1.00 | 1.00 |
-| partial (part in scope) | 6 | 1.00 | 1.00 | 1.00 | 1.00 |
-| out-of-scope (refuse) | 4 | 1.00 | – | 1.00 | 1.00 |
-| **all** | **30** | **0.97** | **1.00** | **1.00** | **1.00** |
+| Agent, gemini-3.8-flash ([report](evals/reports/agent.md)) | n | answer acc | citation recall | grounded |
+|---|---|---|---|---|
+| regulation · stats · partial · refuse | 26 | 1.00 | 1.00 | 1.00 |
+| hybrid (rule + stats) | 4 | 0.75 | 1.00 | 1.00 |
+| **all (30-question run)** | **30** | **0.97** | **1.00** | **1.00** |
 
-66 tool calls · ~156k input / 20k output tokens for the full run · false-refusal rate 0.00.
+False-refusal rate 0.00. The two dated-rule questions were added later and run separately:
+reg-10 passes, and part-07 refuses with a correct Part 60 pointer instead of giving a partial
+answer. Both remaining misses are left visible rather than prompt-tuned away.
 
-**What manual review changed.** The automated eval first scored 24/24. Reading the answers by hand
-showed problems the scorer couldn't see: stats from the 3,000-row sample didn't say so up front,
-one called the sample “representative” (it keeps every fatality, so it isn't), and keyword counts
-said “involving conveyors” when they only *mention* them. Those became scoring rules, and the old
-answers drop to **19/24 (0.79)** under them. A prompt fix brought that to 29/30. The remaining
-miss (hyb-01 still says “involving”) is left visible rather than tuned away. Six **partial**
-questions were also added. Each one is half in scope (“hard hats *and* training?”), and the copilot
-should answer the covered half, then add a `Not covered:` line pointing elsewhere (e.g. Part 46
-for training) instead of refusing outright or guessing. Earlier, the first M5 run (0.96) had
-surfaced an empty-final-answer bug and a grounding false positive, both fixed.
-
-**Expired rules.** Part 56 holds expired and in-force versions of the dust/silica rules
-(56.5001 vs 56.5001T). The model kept citing the expired ones, even when they were labelled
-EXPIRED, because it doesn't know today's date. Expired sections are now filtered out in the tool layer.
-Two golden questions cover this (reg-10 passes; part-07 refuses instead of giving a partial answer).
-They were run separately, so the table above is the 30-question run from before this change.
-
-**Retrieval** (13 regulation/hybrid questions, k=5; [`evals/reports/retrieval.md`](evals/reports/retrieval.md)):
-
-| mode | recall@1 | recall@5 | MRR |
+| Retrieval, 13 Qs, k=5 ([report](evals/reports/retrieval.md)) | recall@1 | recall@5 | MRR |
 |---|---|---|---|
 | BM25 | 0.54 | 0.85 | 0.65 |
-| **dense** (default) | **0.92** | **0.92** | **0.92** |
+| **dense (default)** | **0.92** | **0.92** | **0.92** |
 | hybrid (RRF) | 0.85 | 0.85 | 0.85 |
 
-**How the golden set was built:** `evals/build_golden.py` checks that every expected fact appears
-verbatim in the section text, and every expected number comes from a SQL query against the DB.
-Scoring is rule-based (no LLM judge), so a re-score is deterministic.
+> Caveat: questions written alongside the system make a regression gate, not a benchmark.
 
-> **Caveat:** 30 questions written alongside the system is a regression gate, not a benchmark.
-> One miss moves a type's score by 0.11–0.25.
+## Manual review
+
+The automated eval first scored 24/24. A hand review against outside sources found what it missed:
+
+| Check | Finding | Outcome |
+|---|---|---|
+| Read every answer | Sample stats lacked a caveat; one called the sample "representative" | New phrase rules: old answers drop to **19/24**, fixed prompt scores 29/30 |
+| Keyword-count accidents | Of 12 fatal matches, only 7 had the keyword as the cause | Answers must say "*mentioning* conveyors" |
+| Fatal counts vs MSHA | Raw counts reconcile **exactly** with MSHA's published totals (95 = 80 kept + 15 underground) | Filters verified |
+| Severity mapping | Sound; `other` mixes illness, natural causes, non-employees | Documented; tool describes it |
+| Dated silica rules | Model cited expired rules | Fixed in the tool layer |
+| Rule text vs eCFR | 5 sections incl. the longest: word-for-word identical; chunks rebuild losslessly | Ingest verified |
+
+Details: [`docs/DATA_CARD.md`](docs/DATA_CARD.md) · rationale: [`docs/DECISIONS.md`](docs/DECISIONS.md).
+
+## Cost and testing
+
+- **Built on the free tier.** All model calls go through one provider interface, so swapping
+  models (e.g. to Claude) is a config change. BM25 runs with no API key.
+- **Pay once, reuse.** Embeddings are computed once into a 1.4 MB `.npy` file (no vector DB). Eval
+  answers are cached per model, so `--rescore` and grounding-check fixes re-score offline, and
+  `--only` re-runs just the changed questions. A full eval run is about 156k input and 20k output
+  tokens, all tracked.
+- **48 offline tests.** Fixtures are real data with deliberate *must-reject* rows (coal, 2019,
+  underground, blank narratives) so every filter is proven, and a scripted `FakeProvider`
+  drives the agent and the Streamlit UI with no network.
 
 ## Quickstart
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev,demo]"
-cp .env.example .env          # add GEMINI_API_KEY
+cp .env.example .env                          # add GEMINI_API_KEY
+python -m mine_copilot.ingest.build           # download + build the SQLite DB
+python -m mine_copilot.retrieval.build        # chunk + embed (--no-embed for BM25 only)
+python -m mine_copilot.agent "How high must berms be on haul roads?"   # --json for the trace
+streamlit run src/mine_copilot/app.py         # demo UI
+pytest -q                                     # offline tests
+python evals/eval_agent.py --model gemini-3.8-flash   # live eval (cached; --rescore offline)
 ```
 
-```bash
-python -m mine_copilot.ingest.build       # download + build data/processed/mine_copilot.db
-python -m mine_copilot.retrieval.build    # chunk + embed (~5 min; --no-embed for BM25 only)
-```
+## Limitations
 
-```bash
-python -m mine_copilot.agent "How high must berms be on haul roads?"      # CLI (--json for full trace)
-streamlit run src/mine_copilot/app.py                                       # demo UI
-```
-
-```bash
-pytest -q                          # 43 tests, fully offline (fixtures + FakeProvider)
-python evals/eval_retrieval.py     # retrieval report
-python evals/eval_agent.py         # agent report (live API; answers cached in evals/runs/, --rescore offline)
-```
-
-The demo has an example button for each question type. It shows a refusal warning, a grounding
-badge, expandable cited sections with their full text, the tool-call trace, and per-query
-tokens and latency.
-
-## Design highlights
-
-Full rationale is in [`docs/DECISIONS.md`](docs/DECISIONS.md).
-
-- **Allow-listed stats tool over text-to-SQL.** Text-to-SQL failures (bad joins, injection,
-  silently wrong filters) are hard to detect. Typed filters cover every golden question, and when
-  something goes wrong the tool returns an error the model can recover from.
-- **Grounding as a post-check, not a prompt instruction.** The model is asked to cite, and the
-  code then verifies each citation. Unverifiable citations are stripped and flagged, never
-  silently shown.
-- **Refusal is a measured behavior.** Out-of-scope questions (underground mines, coal, years
-  outside 2021–2024, investment advice) are part of the golden set, and so are half-in-scope
-  questions that should get a partial answer with a `Not covered:` pointer. The false-refusal
-  rate is reported too.
-- **Offline by default.** Fixtures and `FakeProvider` mean the tests never call the network. Eval
-  answers are cached per model, so a run cut short by the rate limit picks up where it stopped.
-- **Small, inspectable stack.** SQLite, a `.npy` embedding matrix and BM25; no vector DB. At
-  459 chunks, brute-force search is instant and easy to debug.
-
-## Limitations & next steps
-
-- Scope is Part 56 only. Underground mines (Part 57) and coal (Parts 70–75) are out of scope.
-- The accident sample is all fatalities plus a seeded sample, capped at 3,000 rows. Counts
-  describe that sample, not the full MSHA population.
-- The grounding check verifies sections and numbers. It does not verify paraphrased claims.
-- The eval is small and covers only one model. Next steps: a larger held-out question set
-  written by someone else, a comparison across models through the provider interface, and
-  hybrid retrieval tuned on the two remaining misses.
-- Not legal or compliance advice. Always check against the current eCFR.
+- Part 56 only: no underground (Part 57), coal (Parts 70–75), training (Part 46) or silica limits (Part 60).
+- Accident stats describe a 3,000-row sample that keeps every fatality, so it over-represents
+  severe accidents. Narratives are short (≤384 chars), and half the rows have no equipment field.
+- Expired rule text can't be quoted, even for accidents that happened under it.
+- The grounding check verifies sections and numbers, not paraphrased wording.
+- Small in-house eval with one model; next steps are a held-out question set written by someone
+  else and a comparison across models.
+- Not legal or compliance advice. Always check the current eCFR.
 
 ## Repo layout
 
