@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import pytest
-from test_agent import tools  # noqa: F401 — shared fixture-DB Tools
 
 from mine_copilot.agent.loop import REFUSAL_PREFIX, AgentResult
 from mine_copilot.demo import Metered, eval_summary, friendly_error, grounding_problems
@@ -49,7 +48,7 @@ def test_eval_summary_parses_report(tmp_path):
 
 # --- app render path -------------------------------------------------------------------------
 
-def ask(tools, replies, question="Guarding rules?"):  # noqa: F811
+def ask(tools, replies, question="Guarding rules?"):
     at = AppTest.from_file(str(APP), default_timeout=30)
     at.session_state["tools"] = tools
     at.session_state["provider"] = FakeProvider(replies)
@@ -60,7 +59,7 @@ def ask(tools, replies, question="Guarding rules?"):  # noqa: F811
     return at
 
 
-def test_app_grounded_answer(tools):  # noqa: F811
+def test_app_grounded_answer(tools):
     at = ask(tools, [CALL, Reply(text="Guard parts within 7 feet (§ 56.14107).")])
     assert "Grounded" in at.success[0].value and not at.error
     labels = [e.label for e in at.expander]
@@ -69,12 +68,12 @@ def test_app_grounded_answer(tools):  # noqa: F811
     assert "LLM calls" in at.sidebar.markdown[-1].value
 
 
-def test_app_flags_ungrounded_number(tools):  # noqa: F811
+def test_app_flags_ungrounded_number(tools):
     at = ask(tools, [CALL, Reply(text="There were 999 cases (§ 56.14107).")])
     assert "number 999" in at.error[0].value and not at.success
 
 
-def test_app_refusal_and_error(tools):  # noqa: F811
+def test_app_refusal_and_error(tools):
     at = ask(tools, [Reply(text=f"{REFUSAL_PREFIX} I only cover surface mines.")])
     assert at.warning[0].value.startswith(REFUSAL_PREFIX)
 

@@ -92,7 +92,9 @@ class Tools:
                 if (st := section_status(r["section_id"], r["text"]))}
 
     def search_regulations(self, query: str, k: int = 5) -> dict:
-        hits = self.index.search(query, k=min(int(k), 8), mode=self.search_mode)
+        k = min(int(k), 8)
+        expired = sum(st.startswith("EXPIRED") for st in self.statuses.values())
+        hits = self.index.search(query, k=k + expired, mode=self.search_mode)  # refill hidden ones
         results = []
         for h in hits:
             # Expired dated sections are hidden: the model was seen citing them despite a label.
@@ -103,7 +105,7 @@ class Tools:
             if st := self.statuses.get(h["section_id"]):
                 r["status"] = st
             results.append(r)
-        return {"results": results}
+        return {"results": results[:k]}
 
     def get_regulation(self, section_id: str) -> dict:
         sid = section_id.strip().removeprefix("§").strip().removeprefix("30 CFR").strip()

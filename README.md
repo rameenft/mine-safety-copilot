@@ -96,6 +96,28 @@ The automated eval first scored 24/24. A hand review against outside sources fou
 
 Details: [`docs/DATA_CARD.md`](docs/DATA_CARD.md) · rationale: [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
+## Use it from any AI app (MCP)
+
+The three tools are also available as an **MCP server**, so Claude Desktop, Claude Code or any MCP
+client can use the same data and guardrails: allow-listed read-only stats, and expired rules
+hidden. The agent's grounding check does *not* run over MCP, because the client's model writes the
+answer. The agent's rules are sent as server instructions but aren't enforced.
+
+```bash
+pip install -e ".[mcp]"
+claude mcp add mine-safety-copilot -- "$PWD/.venv/bin/python" -m mine_copilot.mcp_server   # Claude Code
+```
+
+For Claude Desktop, add this to `claude_desktop_config.json`:
+
+```json
+{"mcpServers": {"mine-safety-copilot": {
+  "command": "/absolute/path/to/mine-safety-copilot/.venv/bin/python",
+  "args": ["-m", "mine_copilot.mcp_server"]}}}
+```
+
+The server reads `GEMINI_API_KEY` from `.env` for dense search, and falls back to BM25 without it.
+
 ## Cost and testing
 
 - **Built on the free tier.** All model calls go through one provider interface, so swapping
@@ -104,9 +126,9 @@ Details: [`docs/DATA_CARD.md`](docs/DATA_CARD.md) · rationale: [`docs/DECISIONS
   answers are cached per model, so `--rescore` and grounding-check fixes re-score offline, and
   `--only` re-runs just the changed questions. A full eval run is about 156k input and 20k output
   tokens, all tracked.
-- **48 offline tests.** Fixtures are real data with deliberate *must-reject* rows (coal, 2019,
+- **51 offline tests.** Fixtures are real data with deliberate *must-reject* rows (coal, 2019,
   underground, blank narratives) so every filter is proven, and a scripted `FakeProvider`
-  drives the agent and the Streamlit UI with no network.
+  drives the agent, the Streamlit UI and the MCP server (in-process client) with no network.
 
 ## Quickstart
 
@@ -136,7 +158,7 @@ python evals/eval_agent.py --model gemini-3.8-flash   # live eval (cached; --res
 ## Repo layout
 
 ```
-src/mine_copilot/   ingest/ retrieval/ agent/ llm.py config.py demo.py app.py
+src/mine_copilot/   ingest/ retrieval/ agent/ llm.py config.py demo.py app.py mcp_server.py
 evals/              golden_set.yaml, build_golden.py, eval_*.py, reports/
 tests/              offline tests + fixtures/
 docs/               DATA_CARD.md, DECISIONS.md

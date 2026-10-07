@@ -30,7 +30,10 @@ Avathon "Associate AI Engineer, Physical AI" interview. One-day build, Claude Pr
 
 - M8: manual-review fixes. Phrase rules in the golden set (sample caveat up front, no "representative", "mention" for keyword counts), new `partial` type (6 Qs, "Not covered:" line with allow-listed pointers), prompt + SAMPLE_NOTE updated. 30 Qs: 29/30 (hyb-01 still says "involving"). Old M5 answers rescore 19/24 under new rules. 45 tests passing. Review workbook: `data/review/manual_review.md` (gitignored).
 
-**Next:** finish manual review checks 2–8 in the workbook; optional: push, multi-model comparison — optional: push, held-out eval set, multi-model comparison.
+- Review checks 2–5, 8 done (DATA_CARD/DECISIONS): MSHA reconciliation exact, eCFR text identical, expired dated sections hidden/redirected in tools (prompt + label both failed). Golden set 32 (reg-10 pass, part-07 visible fail); other 30 not re-run since.
+- M9: MCP server `src/mine_copilot/mcp_server.py` (`pip install -e ".[mcp]"`, mcp 2.x low-level Server reusing TOOL_SPECS/call_tool, read-only annotations, SYSTEM as instructions). Verified over stdio vs real DB. 51 tests passing.
+
+**Next:** single self-contained notebook (all code inline in cells, no %%writefile / source files) + detailed PDF; check 6 (user-written held-out Qs); full 32-Q rerun; optional: push, multi-model comparison.
 
 **Quota:** free tier is 20 req/day per model (3.8-flash and 2.5-flash); billing now enabled ($5 credit). M5 full run ≈ 108k in / 13k out tokens.
 

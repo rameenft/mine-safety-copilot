@@ -126,3 +126,14 @@ part-07 ("silica limit at my quarry?") now refuses outright and points to Part 6
 giving a partial answer citing 56.5001T. That's safe but doesn't match the expected behaviour, so
 it stays a visible failure. The other 30 questions were not re-run after these prompt and tool
 changes. `evals/reports/agent.md` is the 30-question run from before them.
+
+## MCP server reuses the agent's tools, not a parallel implementation
+`mcp_server.py` uses the low-level `mcp` 2.x `Server` and serves `TOOL_SPECS` as the tool schemas,
+running each call through `call_tool`. FastMCP/MCPServer was skipped because it derives schemas
+from function signatures, which would duplicate (and drift from) the schemas the agent uses. All
+tools are annotated read-only. Guardrails that live in the tool layer carry over: the allow-listed
+stats filters, the read-only DB, and expired sections hidden and redirected. The grounding check and
+refusal rules live in the agent loop, so over MCP they're only advisory, sent as server
+`instructions` that reuse the agent's system prompt. This is the case for putting safety-critical behaviour
+in tools rather than prompts. Search now over-fetches by the number of hidden expired sections so
+it still returns k results. `mcp` is an optional extra, and its tests skip when it isn't installed.
