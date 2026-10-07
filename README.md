@@ -75,6 +75,12 @@ should answer the covered half, then add a `Not covered:` line pointing elsewher
 for training) instead of refusing outright or guessing. Earlier, the first M5 run (0.96) had
 surfaced an empty-final-answer bug and a grounding false positive, both fixed.
 
+**Expired rules.** Part 56 holds expired and in-force versions of the dust/silica rules
+(56.5001 vs 56.5001T). The model kept citing the expired ones, even when they were labelled
+EXPIRED, because it doesn't know today's date. Expired sections are now filtered out in the tool layer.
+Two golden questions cover this (reg-10 passes; part-07 refuses instead of giving a partial answer).
+They were run separately, so the table above is the 30-question run from before this change.
+
 **Retrieval** (13 regulation/hybrid questions, k=5; [`evals/reports/retrieval.md`](evals/reports/retrieval.md)):
 
 | mode | recall@1 | recall@5 | MRR |

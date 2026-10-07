@@ -89,6 +89,8 @@ def score_item(item: dict, result: dict) -> dict:
         if not expected_secs & cited:
             s["missing"].append(f"section: {sorted(expected_secs)}")
     phrases = phrase_checks(item, answer)
+    # Expired versions of dated sections (56.5001 vs 56.5001T) must not be cited.
+    phrases += [f"cited expired: {sec}" for sec in item.get("forbidden_sections", []) if sec in cited]
     s["missing"] += phrases
     s["correct"] = not refused and all(checks) and not phrases
     return s

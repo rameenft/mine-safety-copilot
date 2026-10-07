@@ -129,3 +129,34 @@ def test_loop_forces_answer_after_max_turns(tools):
     assert fake.calls[-1]["tools"] is None  # tools withheld on the final turn
     assert fake.calls[-1]["messages"][-1] == {"role": "user", "text": FINAL_NUDGE}
     assert len(res.trace) == 2 and res.citations["sections"] == ["56.9300"]
+
+
+def test_section_status_labels_dated_versions():
+    from datetime import date
+
+    from mine_copilot.agent.tools import section_status
+
+    old = "The following is required until April 7, 2026. Except as permitted..."
+    new = "As of April 8, 2026 the following is required, except as permitted..."
+    assert section_status("56.5001", old, date(2026, 10, 7)).startswith("EXPIRED")
+    assert "56.5001T" in section_status("56.5001", old, date(2026, 10, 7))
+    assert section_status("56.5001", old, date(2025, 1, 1)).startswith("IN FORCE until")
+    assert section_status("56.5001T", new, date(2026, 10, 7)).startswith("IN FORCE since")
+    assert section_status("56.5001T", new, date(2025, 1, 1)).startswith("NOT YET")
+    assert section_status("56.14107", "(a) Moving machine parts shall be guarded", date(2026, 1, 1)) is None
+
+
+def test_expired_section_redirects_to_in_force_version(tmp_path):
+    import sqlite3
+
+    from mine_copilot.agent.tools import Tools
+
+    db = tmp_path / "t.db"
+    con = sqlite3.connect(db)
+    con.execute("CREATE TABLE regulations (section_id, subpart, heading, text, source_url)")
+    con.executemany("INSERT INTO regulations VALUES (?, '', 'h', ?, 'u')", [
+        ("56.5005", "The following is required until April 7, 2026. Old text."),
+        ("56.5005T", "As of April 8, 2026, the following is required. New text.")])
+    con.commit()
+    out = Tools(db_path=db).get_regulation("56.5005")
+    assert out["section_id"] == "56.5005T" and "Cite § 56.5005T" in out["note"]

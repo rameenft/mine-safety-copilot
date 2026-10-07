@@ -65,3 +65,11 @@ def test_partial_needs_not_covered_line_and_is_its_own_type():
     assert not score_item(part, _result("Hard hats: § 56.15002.", ["56.15002"]))["correct"]
     rows = summarize([part], {"p": score_item(part, good)})
     assert rows["partial"]["answer_acc"] == 1.0
+
+
+def test_forbidden_section_is_the_expired_version_only():
+    item = {"id": "r", "type": "reg", "must_refuse": False, "expected_sections": ["56.5005T"],
+            "forbidden_sections": ["56.5005"]}
+    assert score_item(item, _result("See § 56.5005T.", ["56.5005T"]))["correct"]
+    s = score_item(item, _result("See § 56.5005T and § 56.5005.", ["56.5005T", "56.5005"]))
+    assert not s["correct"] and "cited expired: 56.5005" in s["missing"]

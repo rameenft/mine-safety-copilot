@@ -6,7 +6,9 @@ and every value is bound as a parameter.
 """
 
 import os
+import re
 import sqlite3
+from datetime import date, datetime
 from functools import cached_property
 from pathlib import Path
 
@@ -38,6 +40,26 @@ SAMPLE_NOTE = ("Every fatality 2021-2024 is included; non-fatal rows are a rando
                "3,000 rows. Counts that include non-fatal rows describe this sample, not all "
                "accidents, and the sample over-represents severe accidents.")
 SNIPPET_CHARS = 600
+# Dated versions (56.5001 "required until April 7, 2026" / 56.5001T "As of April 8, 2026").
+# The model doesn't know today's date, so the tool labels which version is in force.
+UNTIL_RE = re.compile(r"required until (\w+ \d{1,2}, \d{4})")
+AS_OF_RE = re.compile(r"^As of (\w+ \d{1,2}, \d{4})")
+
+
+def section_status(section_id: str, text: str, today: date | None = None) -> str | None:
+    """'EXPIRED …' / 'IN FORCE …' / 'NOT YET IN FORCE …' for dated sections, else None."""
+    today = today or date.today()  # noqa: DTZ011 - calendar dates, no time zone involved
+    if m := UNTIL_RE.search(text[:200]):
+        until = datetime.strptime(m.group(1), "%B %d, %Y").date()  # noqa: DTZ007
+        if until < today:
+            return (f"EXPIRED after {m.group(1)}; do not cite as current. "
+                    f"Use § {section_id}T if it exists.")
+        return f"IN FORCE until {m.group(1)}"
+    if m := AS_OF_RE.search(text):
+        start = datetime.strptime(m.group(1), "%B %d, %Y").date()  # noqa: DTZ007
+        return (f"IN FORCE since {m.group(1)}" if start <= today
+                else f"NOT YET IN FORCE (starts {m.group(1)})")
+    return None
 
 
 class Tools:
@@ -63,10 +85,25 @@ class Tools:
 
     # --- tools -------------------------------------------------------------------------------
 
+    @cached_property
+    def statuses(self) -> dict[str, str]:
+        rows = self._query("SELECT section_id, text FROM regulations", [])
+        return {r["section_id"]: st for r in rows
+                if (st := section_status(r["section_id"], r["text"]))}
+
     def search_regulations(self, query: str, k: int = 5) -> dict:
         hits = self.index.search(query, k=min(int(k), 8), mode=self.search_mode)
-        return {"results": [{"section_id": h["section_id"], "heading": h["heading"],
-                             "snippet": h["text"][:SNIPPET_CHARS]} for h in hits]}
+        results = []
+        for h in hits:
+            # Expired dated sections are hidden: the model was seen citing them despite a label.
+            if self.statuses.get(h["section_id"], "").startswith("EXPIRED"):
+                continue
+            r = {"section_id": h["section_id"], "heading": h["heading"],
+                 "snippet": h["text"][:SNIPPET_CHARS]}
+            if st := self.statuses.get(h["section_id"]):
+                r["status"] = st
+            results.append(r)
+        return {"results": results}
 
     def get_regulation(self, section_id: str) -> dict:
         sid = section_id.strip().removeprefix("§").strip().removeprefix("30 CFR").strip()
@@ -74,7 +111,15 @@ class Tools:
                            "WHERE section_id = ?", [sid])
         if not rows:
             return {"error": f"Section {sid} not found in 30 CFR Part 56."}
-        return dict(rows[0])
+        out = dict(rows[0])
+        st = section_status(sid, out["text"])
+        if st and st.startswith("EXPIRED") and (new := self.get_regulation(sid + "T")).get("text"):
+            new["note"] = (f"§ {sid} expired; this is its replacement, § {sid}T, in force today. "
+                           f"Cite § {sid}T.")
+            return new
+        if st:
+            out["status"] = st
+        return out
 
     def accident_stats(self, severity: str | None = None, year_from: int | None = None,
                        year_to: int | None = None, narrative_contains: list[str] | None = None,
@@ -167,7 +212,10 @@ TOOL_SPECS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "severity": {"type": "string", "enum": SEVERITIES},
+                "severity": {"type": "string", "enum": SEVERITIES,
+                             "description": "'other' mixes occupational illness, natural-cause "
+                                            "deaths/injuries, non-employee injuries and no-injury "
+                                            "events; say so when reporting it."},
                 "year_from": {"type": "integer"},
                 "year_to": {"type": "integer"},
                 "classification": {"type": "string", "description": "e.g. MACHINERY, "

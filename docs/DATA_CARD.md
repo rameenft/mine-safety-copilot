@@ -48,6 +48,59 @@ Columns: `MINE_ID, CURRENT_MINE_NAME, STATE, CURRENT_MINE_TYPE, PRIMARY_SIC`.
 - `part56_sample.xml`: the real eCFR XML trimmed to 20 sections.
 - Regenerate with `python -m mine_copilot.ingest.fixtures`.
 
+## Manual review: regulation text vs eCFR (2026-10-07)
+Five sections (56.2, the longest; 56.14101; 56.14130; 56.9300; 56.14107) were diffed word by word
+against the official eCFR rendering for 2026-10-01. They're identical apart from the trailing Federal Register
+source note, which is deliberately not stored. All 20 sections split for indexing rebuild exactly from their chunks.
+Dated versions (56.5001/56.5005 expired April 7, 2026; the `T` versions in force since April 8, 2026)
+are handled in the tool layer (see DECISIONS).
+
+## Manual review: SEVERITY mapping (2026-10-07)
+Reviewed against the MSHA definition file and sample narratives. The six main buckets hold up.
+Code 04 (days away *and* restricted) → `lost_time` is fair: 375 of its 385 rows have days lost.
+Keeping code 08 (natural causes) out of `fatal` matches MSHA's chargeable count (see reconciliation below).
+`other` (255 rows) is a mix and can't answer questions about any one of its parts:
+
+| Code | Rows | What it contains (examples) |
+|---|---|---|
+| 07 Occupational illness | 114 | fume exposure, COVID-19 positive, strain pain |
+| 00 Accident only | 68 | fire or stuck elevator, nobody hurt |
+| 08 Natural causes | 41 | panic attack; a customer driver's fatal medical emergency |
+| 10 All other / first aid | 18 | chipped tooth, trip |
+| 09 Non-employees | 14 | customer or outside truck drivers |
+
+The `accident_stats` severity description tells the model what `other` contains. Splitting it
+into `illness` / `natural_causes` / `non_employee` / `no_injury` is a possible follow-up.
+
+## Manual review: fatal counts reconciled with MSHA (2026-10-07)
+Raw metal/nonmetal `FATALITY` records, counted *before* the surface filter, match MSHA's published
+[Metal/Nonmetal Fatalities](https://www.msha.gov/metalnonmetal-fatalities) table exactly:
+
+| Year | Raw M/NM fatal records | MSHA published | Kept (surface) | Excluded: underground | Excluded: surface at underground |
+|---|---|---|---|---|---|
+| 2021 | 27 | 27 | 21 | 6 | 0 |
+| 2022 | 19 | 19 | 15 | 4 | 0 |
+| 2023 | 31 | 31 | 27 | 3 | 1 |
+| 2024 | 18 | 18 | 17 | 1 | 0 |
+| **Total** | **95** | **95** | **80** | **14** | **1** |
+
+No fatal record was dropped by the non-empty-narrative filter. The counts are fatal accident
+*records*, so an accident with two deaths would count once.
+
+## Manual review: keyword matches (2026-10-07)
+The hybrid golden questions count fatal accidents by narrative keyword. All 12 matches were read by hand:
+
+| Keyword | Matches | Keyword is the cause | Mentioned only | Can't tell |
+|---|---|---|---|---|
+| conveyor | 6 | 3 | 2 (crane load hit power line; manlift hit conveyor canopy) | 1 |
+| berm | 3 | 2 | 1 (dozer slid off bench shelf) | 0 |
+| harness / fall protection | 3 | 2 | 1 (was wearing it; engulfed in hopper) | 0 |
+
+One accident (220231730009) matches both conveyor and fall protection. The single rule each question
+expects doesn't fit every accident: a dump-site overtravel falls under §56.9301 rather than §56.9300,
+a power-line contact under §56.12071, and a hopper engulfment under §56.16002. Keyword counts are
+therefore reported as accidents *mentioning* the term (enforced since M8).
+
 ## Limitations
 - **Short narratives:** median 195 characters, max 384 (the source appears to truncate them). They are thin evidence for root-cause questions.
 - **Sample, not population:** the sample keeps every fatality, so severity mix in the sample over-represents fatalities. Statistics describe the sample and must say so.

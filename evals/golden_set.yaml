@@ -86,6 +86,19 @@
   - falling objects
   must_refuse: false
   verified_by: facts found verbatim in 56.15002
+- id: reg-10
+  type: reg
+  question: What does Part 56 require for respirators when miners are exposed to dust?
+  expected_sections:
+  - 56.5005T
+  forbidden_sections:
+  - '56.5005'
+  expected_facts:
+  - written respiratory protection program
+  - ASTM F3387-19
+  notes: 56.5005 expired April 7, 2026; 56.5005T is in force.
+  must_refuse: false
+  verified_by: facts found verbatim in 56.5005T
 - id: agg-01
   type: agg
   question: How many fatal accidents were recorded in 2023?
@@ -237,6 +250,18 @@
   must_refuse: false
   expected_value: 17
   verified_by: SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' AND CAL_YR=2024
+- id: part-07
+  type: partial
+  question: What is the exposure limit for respirable crystalline silica at my quarry?
+  expected_sections:
+  - 56.5001T
+  forbidden_sections:
+  - '56.5001'
+  notes: 56.5001T (in force) defers silica to 30 CFR Part 60, which is not in the corpus.
+  required_phrases: *id004
+  must_refuse: false
+  verified_by: 'sections exist; out-of-scope part: 56.5001T (in force) defers silica to 30 CFR Part 60,
+    which is not in the corpus.'
 - id: ref-01
   type: refuse
   question: What does 30 CFR Part 75 require for roof bolting in underground coal mines?

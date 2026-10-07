@@ -8,6 +8,7 @@ unsupported is dropped from the citations and reported in `ungrounded`.
 import json
 import re
 from dataclasses import asdict, dataclass, field
+from datetime import date
 
 from mine_copilot.agent.tools import TOOL_SPECS, YEARS, Tools, call_tool
 from mine_copilot.llm import Provider
@@ -16,15 +17,17 @@ MAX_TOOL_TURNS = 5
 FINAL_NUDGE = "Tool budget used up. Answer now using only the tool results above."
 REFUSAL_PREFIX = "Out of scope:"
 PARTIAL_PREFIX = "Not covered:"
+TODAY = date.today()  # noqa: DTZ011 - the model doesn't know the date; tell it
 
 SYSTEM = f"""You are Mine Safety Copilot, a safety assistant for US SURFACE metal/nonmetal mines.
 Your only sources are tool results: 30 CFR Part 56 regulations and MSHA accident records
-({YEARS[0]}-{YEARS[1]}).
+({YEARS[0]}-{YEARS[1]}). Today's date is {TODAY:%B %d, %Y}.
 
 Rules:
 1. Always use tools before answering. Never answer from memory.
 2. Regulation questions: search_regulations, then get_regulation for the section you rely on.
-   Cite sections as "§ 56.xxxx".
+   Cite sections as "§ 56.xxxx". Some sections have a dated "T" version (e.g. 56.5001T). The
+   tools return only the version in force today; trust its status and dates over your memory.
 3. Statistics: use accident_stats; report numbers exactly as returned. If a number includes
    non-fatal records, your first sentence must say it comes from a 3,000-record sample. Every
    fatality is kept, so the sample over-represents severe accidents: never call it representative.
@@ -37,7 +40,7 @@ Rules:
 6. If only PART of a question is in scope, answer that part with citations, then add a final
    line starting "{PARTIAL_PREFIX}" naming what you can't answer and where to look. Don't
    answer the uncovered part. Pointers you may give: training is 30 CFR Part 46; penalties are
-   30 CFR Part 100; underground metal/nonmetal is Part 57; coal is Parts 70-75; non-mine
+   30 CFR Part 100; respirable crystalline silica limits are 30 CFR Part 60; underground metal/nonmetal is Part 57; coal is Parts 70-75; non-mine
    workplaces are OSHA; years outside {YEARS[0]}-{YEARS[1]} are on MSHA's data portal.
 7. If tools return nothing relevant, say so rather than guessing.
 Be concise: a direct answer first, then the supporting citation(s)."""

@@ -58,6 +58,11 @@ QUESTIONS = [
      "question": "When are hard hats required?",
      "expected_sections": ["56.15002"],
      "expected_facts": ["falling objects"]},
+    {"id": "reg-10", "type": "reg",
+     "question": "What does Part 56 require for respirators when miners are exposed to dust?",
+     "expected_sections": ["56.5005T"], "forbidden_sections": ["56.5005"],
+     "expected_facts": ["written respiratory protection program", "ASTM F3387-19"],
+     "notes": "56.5005 expired April 7, 2026; 56.5005T is in force."},
     # --- agg: answer is a SQL aggregate over accidents ---
     {"id": "agg-01", "type": "agg",
      "question": "How many fatal accidents were recorded in 2023?",
@@ -137,6 +142,11 @@ QUESTIONS = [
                  "and how many at underground mines?",
      "sql": "SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' AND CAL_YR=2024",
      "notes": "Underground (Part 57) data not included.", **PARTIAL_CHECK},
+    {"id": "part-07", "type": "partial",
+     "question": "What is the exposure limit for respirable crystalline silica at my quarry?",
+     "expected_sections": ["56.5001T"], "forbidden_sections": ["56.5001"],
+     "notes": "56.5001T (in force) defers silica to 30 CFR Part 60, which is not in the corpus.",
+     **PARTIAL_CHECK},
     # --- refuse: outside scope, the copilot must decline ---
     {"id": "ref-01", "type": "refuse",
      "question": "What does 30 CFR Part 75 require for roof bolting in underground coal mines?",
@@ -160,7 +170,7 @@ def build(db_path: Path = DB_PATH) -> list[dict]:
     for q in QUESTIONS:
         item = {k: v for k, v in q.items() if k != "sql"}
         item["must_refuse"] = q["type"] == "refuse"
-        for sec in q.get("expected_sections", []):
+        for sec in q.get("expected_sections", []) + q.get("forbidden_sections", []):
             assert sec in regs, f"{q['id']}: section {sec} not in DB"
         for fact in q.get("expected_facts", []):
             sec_text = " ".join(regs[s] for s in q["expected_sections"])

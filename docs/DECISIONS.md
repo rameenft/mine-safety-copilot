@@ -109,3 +109,20 @@ hit a power line). Fixes:
 Old answers score 19/24 under the new rules and the new prompt scores 29/30. hyb-01 still says
 "involving" and is left as a visible failure rather than prompt-tuned to pass a single question.
 M5 answers are archived in `evals/runs/gemini-3.8-flash-m5/` for comparison.
+
+## Dated rule versions: handled in the tool, not the prompt
+Part 56 holds two dated pairs: 56.5001/56.5005 ("required until April 7, 2026") and
+56.5001T/56.5005T ("As of April 8, 2026"). Two new golden items (reg-10, part-07) forbid citing
+the expired version. Three attempts, each run live on just those two questions:
+1. A prompt rule ("cite the version in force today"): the model cited the expired versions. It
+   doesn't know today's date, so "until April 7, 2026" looked current.
+2. A `status` label ("EXPIRED … use 56.5005T") on tool results: still cited the expired version,
+   after ~19k output tokens of reasoning. The model overrode an explicit label it disagreed with.
+3. Hide expired sections from search, have `get_regulation` on an expired ID return its in-force
+   replacement with a note, and put today's date in the system prompt: reg-10 passes.
+Lesson: facts the model must not get wrong go in code, not instructions. Trade-off: the expired
+text can no longer be quoted, even for questions about 2021-2024 accidents that happened under it.
+part-07 ("silica limit at my quarry?") now refuses outright and points to Part 60 instead of
+giving a partial answer citing 56.5001T. That's safe but doesn't match the expected behaviour, so
+it stays a visible failure. The other 30 questions were not re-run after these prompt and tool
+changes. `evals/reports/agent.md` is the 30-question run from before them.
