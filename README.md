@@ -10,6 +10,19 @@ a plausible regulation number. This project optimizes for *verifiable* answers: 
 only look things up through narrow tools, and code checks its citations afterwards. Its
 behaviour was then tested by hand against outside sources, not just by its own exam.
 
+## Start here: one file
+
+[`mine_safety_copilot.ipynb`](mine_safety_copilot.ipynb) is the whole project in one notebook:
+every module inline, with a short explanation per step, and saved outputs so you can read it
+without running it. Run every cell with a Gemini API key. From an empty folder it downloads the
+public data, builds the database and the index, and answers four example questions in about a
+minute. [`mine_safety_copilot.py`](mine_safety_copilot.py) is the same code as a script
+(`python mine_safety_copilot.py "your question"`).
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rameenft/mine-safety-copilot/blob/main/mine_safety_copilot.ipynb)
+
+Both are generated from `src/` by `scripts/build_single_file.py`, and a test fails if they drift.
+
 ## How it works
 
 ```mermaid
@@ -126,9 +139,10 @@ The server reads `GEMINI_API_KEY` from `.env` for dense search, and falls back t
   answers are cached per model, so `--rescore` and grounding-check fixes re-score offline, and
   `--only` re-runs just the changed questions. A full eval run is about 156k input and 20k output
   tokens, all tracked.
-- **51 offline tests.** Fixtures are real data with deliberate *must-reject* rows (coal, 2019,
+- **53 offline tests.** Fixtures are real data with deliberate *must-reject* rows (coal, 2019,
   underground, blank narratives) so every filter is proven, and a scripted `FakeProvider`
-  drives the agent, the Streamlit UI and the MCP server (in-process client) with no network.
+  drives the agent, the Streamlit UI, the MCP server (in-process client) and the one-file
+  version with no network.
 
 ## Quickstart
 
@@ -158,7 +172,9 @@ python evals/eval_agent.py --model gemini-3.8-flash   # live eval (cached; --res
 ## Repo layout
 
 ```
+mine_safety_copilot.ipynb / .py   the whole project in one file (generated)
 src/mine_copilot/   ingest/ retrieval/ agent/ llm.py config.py demo.py app.py mcp_server.py
+scripts/            build_single_file.py
 evals/              golden_set.yaml, build_golden.py, eval_*.py, reports/
 tests/              offline tests + fixtures/
 docs/               DATA_CARD.md, DECISIONS.md

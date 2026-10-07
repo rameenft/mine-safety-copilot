@@ -25,3 +25,6 @@ logs/
 
 # Eval run caches (model outputs; reports in evals/reports are committed)
 evals/runs/
+
+# One-file notebook/script workspace (downloads, DB, index, eval cache)
+mine_copilot_workspace/

@@ -137,3 +137,15 @@ refusal rules live in the agent loop, so over MCP they're only advisory, sent as
 `instructions` that reuse the agent's system prompt. This is the case for putting safety-critical behaviour
 in tools rather than prompts. Search now over-fetches by the number of hidden expired sections so
 it still returns k results. `mcp` is an optional extra, and its tests skip when it isn't installed.
+
+## One-file version is generated, not hand-copied
+`scripts/build_single_file.py` inlines the package into `mine_safety_copilot.py` and `.ipynb`. It
+does this in dependency order: third-party imports are hoisted, our own imports and CLI blocks
+are dropped, and five top-level names that two modules both define are renamed. Without that,
+the later module would silently overwrite the earlier one: `YEARS` in accidents (a range used by
+the filter) vs tools (a tuple), plus `RETRY_WAIT`, `SECTION_RE`, `SAMPLE_NOTE` and `STOPWORDS`.
+The package stays the source of truth. `tests/test_single_file.py` checks that the committed files
+match the generator, and that the one-file agent gives the same results as the package on the
+fixtures. Run cells are guarded by `__main__`, so the test can load definitions without
+downloading anything. Verified end to end from an empty folder: 51 s including downloads and
+embedding, with all 4 example answers correct. Regenerating clears the notebook's saved outputs.
