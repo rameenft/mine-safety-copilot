@@ -88,20 +88,28 @@ Scoring is **rule-based** (no AI judge), so it's deterministic and free to re-ru
 | Out of scope (must refuse) | 4 | 4 | – | 1.00 |
 | **All** | **32** | **30 (0.94)** | **0.95** | **1.00** |
 
-The set grew from 24 to 32 during manual review, with 6 grey-zone and 2 expired-rule questions
-added. 30 answers come from one run, and the 2 expired-rule questions were run after the fix that
+**The current set is 32 questions.** It grew in three steps during manual review:
+
+| Stage | Questions | What was added | Score at that stage |
+|---|---|---|---|
+| First build | 24 | 9 regulation, 7 statistics, 4 rule + statistics, 4 refuse | 24/24 (before stricter rules) |
+| Grey-zone questions | 30 | +6 partial (half-in-scope) questions | 29/30 |
+| Expired-rule checks | **32** | +1 regulation (reg-10), +1 partial (part-07, silica) | **30/32** (table above) |
+
+30 answers come from one run, and the 2 expired-rule questions were run after the fix that
 handles them. The two misses are left visible rather than tuned away: hyb-01 says "involving"
 instead of "mentioning", and part-07 refuses with a correct Part 60 pointer instead of giving a
 partial answer.
 
 **Retrieval** ([report](evals/reports/retrieval.md)): dense recall@5 **0.92**, BM25 0.85, hybrid 0.85.
 
-**Manual review: checking the system against outside sources.** The original 24 questions scored
-24/24 automatically. Reviewing by hand found what that score hid:
+**Manual review: checking the system against outside sources.** This happened while the set
+was still the original 24 questions, which scored 24/24 automatically. Reviewing by hand found
+what that score hid, and these findings are why the set grew to 32 (see the stages above):
 
 | Check | What was done | Finding | Outcome |
 |---|---|---|---|
-| Read every answer | Read all 24 answers as a safety manager would | Stats from the sample didn't say so; one called it "representative"; keyword counts said "involving" | Became scoring rules: old answers drop to **19/24**, the fixed prompt scores 29/30 |
+| Read every answer | Read all 24 original answers as a safety manager would | Stats from the sample didn't say so; one called it "representative"; keyword counts said "involving" | Became scoring rules: the old 24 answers drop to **19/24**; the fixed prompt scores 29/30 on the 30-question set |
 | Grey-zone questions | Added half-in-scope questions ("hard hats *and* training?") | Needed a third behaviour between answering and refusing | Partial answers with `Not covered:` and an approved pointer (Part 46, 60, 100…) |
 | Keyword matches | Read all 12 fatal narratives matched by keyword | Only 7 had the keyword as the cause; the cited rule fit some accidents and not others | Answers say "*mentioning*"; documented |
 | Counts vs MSHA | Compared fatal counts with MSHA's official yearly figures | Raw data matches **exactly** (95 = 80 kept + 15 excluded underground) | Filters verified |
