@@ -180,8 +180,7 @@ better.
 - **CLI:** `python -m mine_copilot.agent "question"` (add `--json` for the full tool trace)
 - **Streamlit demo:** example questions per type, a grounding badge, expandable cited sections, and the tool trace
 - **MCP server:** lets Claude Desktop or Claude Code call the same tools (see below)
-- **Single-file version:** the whole project as one notebook and one script lives on the
-  [`single-file`](https://github.com/rameenft/mine-safety-copilot/tree/single-file) branch. It runs from an empty folder in about a minute with a Gemini API key.
+- **Single-file version:** the whole project as one notebook and one script (this branch). It runs from an empty folder in about a minute with a Gemini API key.
   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rameenft/mine-safety-copilot/blob/single-file/mine_safety_copilot.ipynb)
 
 ## Quickstart
