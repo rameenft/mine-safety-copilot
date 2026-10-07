@@ -34,8 +34,9 @@ METRICS = {
     "avg_days_lost": "ROUND(AVG(a.DAYS_LOST), 1)",
     "total_days_lost": "SUM(a.DAYS_LOST)",
 }
-SAMPLE_NOTE = ("Every fatality 2021-2024 is included; non-fatal rows are a 3,000-row random "
-               "sample, so non-fatal counts describe the sample, not all accidents.")
+SAMPLE_NOTE = ("Every fatality 2021-2024 is included; non-fatal rows are a random fill up to "
+               "3,000 rows. Counts that include non-fatal rows describe this sample, not all "
+               "accidents, and the sample over-represents severe accidents.")
 SNIPPET_CHARS = 600
 
 

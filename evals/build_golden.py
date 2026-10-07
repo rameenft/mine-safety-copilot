@@ -14,6 +14,11 @@ from mine_copilot.config import DB_PATH
 
 OUT = Path(__file__).with_name("golden_set.yaml")
 SAMPLE_NOTE = "Non-fatal counts describe the 3,000-row sample, not the population; say so."
+# Phrase checks added after manual review (M8): stats that include non-fatal rows must flag the
+# sample up front and never call it representative; keyword counts must say "mention", not "cause".
+SAMPLE_CHECKS = {"lead_phrases": ["sample"], "forbidden_phrases": ["representative"]}
+MENTION_CHECK = {"required_phrases": ["mention"]}
+PARTIAL_CHECK = {"required_phrases": ["Not covered:"]}
 
 QUESTIONS = [
     # --- reg: answer lives in one Part 56 section ---
@@ -72,37 +77,66 @@ QUESTIONS = [
      "question": "What is the most common accident classification overall?",
      "sql": "SELECT CLASSIFICATION FROM accidents "
             "GROUP BY CLASSIFICATION ORDER BY COUNT(*) DESC LIMIT 1",
-     "notes": SAMPLE_NOTE},
+     "notes": SAMPLE_NOTE, **SAMPLE_CHECKS},
     {"id": "agg-06", "type": "agg",
      "question": "Which state has the most recorded accidents?",
      "sql": "SELECT m.STATE FROM accidents a JOIN mines m USING(MINE_ID) "
             "GROUP BY m.STATE ORDER BY COUNT(*) DESC LIMIT 1",
-     "notes": SAMPLE_NOTE},
+     "notes": SAMPLE_NOTE, **SAMPLE_CHECKS},
     {"id": "agg-07", "type": "agg",
      "question": "On average, how many days were lost in lost-time accidents?",
      "sql": "SELECT ROUND(AVG(DAYS_LOST), 1) FROM accidents WHERE SEVERITY='lost_time'",
-     "notes": SAMPLE_NOTE},
+     "notes": SAMPLE_NOTE, **SAMPLE_CHECKS},
     # --- hybrid: accident records + the regulation that applies ---
     {"id": "hyb-01", "type": "hybrid",
      "question": "How many fatal accidents involved conveyors, and what rule covers guarding them?",
      "sql": "SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' AND NARRATIVE LIKE '%conveyor%'",
-     "expected_sections": ["56.14107"]},
+     "expected_sections": ["56.14107"], **MENTION_CHECK},
     {"id": "hyb-02", "type": "hybrid",
      "question": "Were there fatalities involving berms, and what does Part 56 require for them?",
      "sql": "SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' AND NARRATIVE LIKE '%berm%'",
-     "expected_sections": ["56.9300"]},
+     "expected_sections": ["56.9300"], **MENTION_CHECK},
     {"id": "hyb-03", "type": "hybrid",
      "question": "How many fatal accidents mention a harness or fall protection, "
                  "and which rule applies?",
      "sql": "SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' "
             "AND (NARRATIVE LIKE '%fall protection%' OR NARRATIVE LIKE '%harness%')",
-     "expected_sections": ["56.15005"]},
+     "expected_sections": ["56.15005"], **MENTION_CHECK},
     {"id": "hyb-04", "type": "hybrid",
      "question": "How many 2023 fatalities were classified as MACHINERY, and what rule covers "
                  "maintenance on machinery?",
      "sql": "SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' AND CAL_YR=2023 "
             "AND CLASSIFICATION='MACHINERY'",
      "expected_sections": ["56.14105"]},
+    # --- partial: one part in scope, one not. Answer the covered part, then "Not covered:" ---
+    {"id": "part-01", "type": "partial",
+     "question": "Do new quarry workers need hard hats, and what safety training must they "
+                 "complete before starting?",
+     "expected_sections": ["56.15002"], "notes": "Training is 30 CFR Part 46, not Part 56.",
+     **PARTIAL_CHECK},
+    {"id": "part-02", "type": "partial",
+     "question": "What are the berm requirements on haul roads, and how much does it cost to "
+                 "build one?",
+     "expected_sections": ["56.9300"], "notes": "Costs are not in any source.", **PARTIAL_CHECK},
+    {"id": "part-03", "type": "partial",
+     "question": "What does Part 56 say about guarding conveyors, and what does OSHA require for "
+                 "conveyors in a warehouse?",
+     "expected_sections": ["56.14107"], "notes": "OSHA / non-mine workplaces out of scope.",
+     **PARTIAL_CHECK},
+    {"id": "part-04", "type": "partial",
+     "question": "What must be done before working on electrical equipment, and what is the "
+                 "fine if MSHA finds we skipped it?",
+     "expected_sections": ["56.12016"], "notes": "Penalties are 30 CFR Part 100.",
+     **PARTIAL_CHECK},
+    {"id": "part-05", "type": "partial",
+     "question": "How many fatal accidents mentioned conveyors from 2021 through 2025?",
+     "sql": "SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' AND NARRATIVE LIKE '%conveyor%'",
+     "notes": "2025 is outside the data; give the 2021-2024 count.", **PARTIAL_CHECK},
+    {"id": "part-06", "type": "partial",
+     "question": "How many fatal accidents were there at surface metal/nonmetal mines in 2024, "
+                 "and how many at underground mines?",
+     "sql": "SELECT COUNT(*) FROM accidents WHERE SEVERITY='fatal' AND CAL_YR=2024",
+     "notes": "Underground (Part 57) data not included.", **PARTIAL_CHECK},
     # --- refuse: outside scope, the copilot must decline ---
     {"id": "ref-01", "type": "refuse",
      "question": "What does 30 CFR Part 75 require for roof bolting in underground coal mines?",
@@ -136,6 +170,8 @@ def build(db_path: Path = DB_PATH) -> list[dict]:
             assert value not in (None, 0), f"{q['id']}: SQL returned {value!r}"
             item["expected_value"] = value
             item["verified_by"] = q["sql"]
+        elif q["type"] == "partial":
+            item["verified_by"] = ("sections exist; out-of-scope part: " + q["notes"])
         elif q["type"] == "reg":
             item["verified_by"] = "facts found verbatim in " + ", ".join(q["expected_sections"])
         else:

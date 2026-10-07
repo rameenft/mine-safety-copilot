@@ -6,7 +6,7 @@ import yaml
 from mine_copilot.config import DB_PATH
 
 GOLDEN = Path(__file__).resolve().parents[1] / "evals" / "golden_set.yaml"
-TYPES = {"reg", "agg", "hybrid", "refuse"}
+TYPES = {"reg", "agg", "hybrid", "partial", "refuse"}
 
 
 @pytest.fixture(scope="module")
@@ -15,7 +15,7 @@ def items():
 
 
 def test_schema(items):
-    assert 20 <= len(items) <= 25
+    assert 25 <= len(items) <= 35
     assert len({i["id"] for i in items}) == len(items)
     for i in items:
         assert i["type"] in TYPES and i["question"] and i["verified_by"]
@@ -24,6 +24,9 @@ def test_schema(items):
             assert i["expected_sections"]
         if i["type"] in {"agg", "hybrid"}:
             assert "expected_value" in i
+        if i["type"] == "partial":
+            assert "Not covered:" in i["required_phrases"]
+            assert i.get("expected_sections") or "expected_value" in i
 
 
 def test_every_type_covered(items):

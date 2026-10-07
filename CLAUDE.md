@@ -28,7 +28,9 @@ Avathon "Associate AI Engineer, Physical AI" interview. One-day build, Claude Pr
 
 - M7: README rewritten — pitch, Mermaid architecture diagram, agent + retrieval eval tables (from `evals/reports/`), quickstart, design highlights, limitations. Screenshots skipped by choice.
 
-**Next:** none planned — optional: push, held-out eval set, multi-model comparison.
+- M8: manual-review fixes. Phrase rules in the golden set (sample caveat up front, no "representative", "mention" for keyword counts), new `partial` type (6 Qs, "Not covered:" line with allow-listed pointers), prompt + SAMPLE_NOTE updated. 30 Qs: 29/30 (hyb-01 still says "involving"). Old M5 answers rescore 19/24 under new rules. 45 tests passing. Review workbook: `data/review/manual_review.md` (gitignored).
+
+**Next:** finish manual review checks 2–8 in the workbook; optional: push, multi-model comparison — optional: push, held-out eval set, multi-model comparison.
 
 **Quota:** free tier is 20 req/day per model (3.8-flash and 2.5-flash); billing now enabled ($5 credit). M5 full run ≈ 108k in / 13k out tokens.
 

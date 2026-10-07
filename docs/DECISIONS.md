@@ -90,3 +90,22 @@ Streamlit is an optional `[demo]` extra so the core install stays lean. `app.py`
 page; token/latency metering, error messages and the eval-report summary live in `demo.py` and are
 unit-tested without Streamlit. Tests inject `provider`/`tools` via `st.session_state`, so
 `streamlit.testing` drives the real render path with `FakeProvider` and the fixture DB, offline.
+
+## M8: manual review turned into scoring rules
+Reading the 24 cached answers by hand (not just the score) found issues the rule-based scorer
+couldn't see: agg-05/06/07 didn't flag the 3,000-row sample up front, agg-06 called it a
+"representative random sample" (it isn't, since every fatality is kept), and hyb-01/02 said
+"involving conveyors/berms" for counts that are keyword matches. Reading the 12 matched fatal
+narratives confirmed that some only *mention* the keyword (e.g. a crane carrying a conveyor belt
+hit a power line). Fixes:
+- Golden items carry phrase rules: `lead_phrases` (must be in the opening paragraph),
+  `required_phrases`, and `forbidden_phrases` (a "not" within 30 chars before it is allowed, so
+  "should not be considered representative" passes).
+- The system prompt now requires the sample caveat in the first sentence and "mentioning" for keyword counts.
+- **Partial answers** (new type, 6 questions): when only part of a question is in scope, answer
+  that part and end with "Not covered:" plus a pointer from a fixed list in the prompt (Part 46
+  training, Part 100 penalties, Part 57, coal Parts 70-75, OSHA). The pointers live in the system
+  prompt, so the grounding check accepts their numbers. The model can't make up other references.
+Old answers score 19/24 under the new rules and the new prompt scores 29/30. hyb-01 still says
+"involving" and is left as a visible failure rather than prompt-tuned to pass a single question.
+M5 answers are archived in `evals/runs/gemini-3.8-flash-m5/` for comparison.

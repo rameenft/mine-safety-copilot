@@ -44,6 +44,23 @@ def value_present(expected, answer: str) -> bool:
     return re.search(rf"\b{re.escape(str(expected))}\b", answer, re.IGNORECASE) is not None
 
 
+def lead(answer: str) -> str:
+    """The opening paragraph: where a caveat has to be to count as 'up front'."""
+    return answer.strip().split("\n\n")[0]
+
+
+def phrase_checks(item: dict, answer: str) -> list[str]:
+    """Case-insensitive phrase rules from manual review; returns what's missing or forbidden."""
+    low, head = answer.lower(), lead(answer).lower()
+    miss = [f"phrase: {p!r}" for p in item.get("required_phrases", []) if p.lower() not in low]
+    miss += [f"phrase up front: {p!r}" for p in item.get("lead_phrases", []) if p.lower() not in head]
+    # "not (be considered) representative" is the honest caveat, so a negated phrase is fine.
+    miss += [f"forbidden: {p!r}" for p in item.get("forbidden_phrases", [])
+             if any(not re.search(r"\bnot\b", low[max(0, m.start() - 30):m.start()])
+                    for m in re.finditer(rf"\b{re.escape(p.lower())}", low))]
+    return miss
+
+
 def score_item(item: dict, result: dict) -> dict:
     """Per-question scores. None means the metric doesn't apply to this question type."""
     answer, refused = result["answer"], result["refused"]
@@ -71,7 +88,9 @@ def score_item(item: dict, result: dict) -> dict:
         checks.append(bool(expected_secs & cited))
         if not expected_secs & cited:
             s["missing"].append(f"section: {sorted(expected_secs)}")
-    s["correct"] = not refused and all(checks)
+    phrases = phrase_checks(item, answer)
+    s["missing"] += phrases
+    s["correct"] = not refused and all(checks) and not phrases
     return s
 
 
@@ -82,7 +101,7 @@ def _mean(xs: list) -> float | None:
 
 def summarize(items: list[dict], scores: dict[str, dict]) -> dict[str, dict]:
     rows = {}
-    for kind in ["reg", "agg", "hybrid", "refuse", "all"]:
+    for kind in ["reg", "agg", "hybrid", "partial", "refuse", "all"]:
         ids = [i["id"] for i in items if (kind == "all" or i["type"] == kind) and i["id"] in scores]
         if not ids:
             continue
@@ -154,9 +173,12 @@ def report(items: list[dict], scores: dict, results: dict, model: str) -> str:
                      f"| {_fmt(r['refusal_acc'])} | {_fmt(r['grounded'])} |")
     lines += ["", "**Metrics.** Answer acc: expected facts (token overlap ≥ "
               f"{FACT_THRESHOLD}), value and section all present. Citation recall: expected sections "
-              "among *grounded* citations. Grounded: no ungrounded numbers/sections in the answer.",
-              "", "**Caveat.** 24 questions written alongside the system; one miss moves a type's "
-              "score by 0.11–0.25. Rule-based scoring checks that facts are present, not that "
+              "among *grounded* citations. Grounded: no ungrounded numbers/sections in the answer. "
+              "Phrase rules (from manual review): sample stats must say “sample” in the opening "
+              "paragraph and never “representative”; keyword counts must say “mention”; partial "
+              "answers must include “Not covered:”.",
+              "", f"**Caveat.** {len(items)} questions written alongside the system; one miss moves "
+              "a type's score by 0.11–0.25. Rule-based scoring checks that facts are present, not that "
               "everything else in the answer is right. Treat this as a regression gate, not a benchmark.",
               "", "## Failures", ""]
     fails = []

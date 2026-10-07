@@ -51,19 +51,29 @@ flowchart LR
 
 ## Results
 
-**Agent, end to end** (24-question golden set, gemini-3.8-flash; [`evals/reports/agent.md`](evals/reports/agent.md)):
+**Agent, end to end** (30-question golden set, gemini-3.8-flash; [`evals/reports/agent.md`](evals/reports/agent.md)):
 
 | type | n | answer acc | citation recall | refusal acc | grounded |
 |---|---|---|---|---|---|
 | regulation | 9 | 1.00 | 1.00 | 1.00 | 1.00 |
 | aggregate stats | 7 | 1.00 | – | 1.00 | 1.00 |
-| hybrid (rule + stats) | 4 | 1.00 | 1.00 | 1.00 | 1.00 |
+| hybrid (rule + stats) | 4 | 0.75 | 1.00 | 1.00 | 1.00 |
+| partial (part in scope) | 6 | 1.00 | 1.00 | 1.00 | 1.00 |
 | out-of-scope (refuse) | 4 | 1.00 | – | 1.00 | 1.00 |
-| **all** | **24** | **1.00** | **1.00** | **1.00** | **1.00** |
+| **all** | **30** | **0.97** | **1.00** | **1.00** | **1.00** |
 
-46 tool calls · ~90k input / 12k output tokens for the full run · false-refusal rate 0.00.
-The first run scored 0.96. Its failures turned up an empty-final-answer bug and a grounding
-false positive on list markers; both are fixed.
+66 tool calls · ~156k input / 20k output tokens for the full run · false-refusal rate 0.00.
+
+**What manual review changed.** The automated eval first scored 24/24. Reading the answers by hand
+showed problems the scorer couldn't see: stats from the 3,000-row sample didn't say so up front,
+one called the sample “representative” (it keeps every fatality, so it isn't), and keyword counts
+said “involving conveyors” when they only *mention* them. Those became scoring rules, and the old
+answers drop to **19/24 (0.79)** under them. A prompt fix brought that to 29/30. The remaining
+miss (hyb-01 still says “involving”) is left visible rather than tuned away. Six **partial**
+questions were also added. Each one is half in scope (“hard hats *and* training?”), and the copilot
+should answer the covered half, then add a `Not covered:` line pointing elsewhere (e.g. Part 46
+for training) instead of refusing outright or guessing. Earlier, the first M5 run (0.96) had
+surfaced an empty-final-answer bug and a grounding false positive, both fixed.
 
 **Retrieval** (13 regulation/hybrid questions, k=5; [`evals/reports/retrieval.md`](evals/reports/retrieval.md)):
 
@@ -77,7 +87,7 @@ false positive on list markers; both are fixed.
 verbatim in the section text, and every expected number comes from a SQL query against the DB.
 Scoring is rule-based (no LLM judge), so a re-score is deterministic.
 
-> **Caveat:** 24 questions written alongside the system is a regression gate, not a benchmark.
+> **Caveat:** 30 questions written alongside the system is a regression gate, not a benchmark.
 > One miss moves a type's score by 0.11–0.25.
 
 ## Quickstart
@@ -119,7 +129,9 @@ Full rationale is in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   code then verifies each citation. Unverifiable citations are stripped and flagged, never
   silently shown.
 - **Refusal is a measured behavior.** Out-of-scope questions (underground mines, coal, years
-  outside 2021–2024, investment advice) are part of the golden set. The false-refusal rate is reported too.
+  outside 2021–2024, investment advice) are part of the golden set, and so are half-in-scope
+  questions that should get a partial answer with a `Not covered:` pointer. The false-refusal
+  rate is reported too.
 - **Offline by default.** Fixtures and `FakeProvider` mean the tests never call the network. Eval
   answers are cached per model, so a run cut short by the rate limit picks up where it stopped.
 - **Small, inspectable stack.** SQLite, a `.npy` embedding matrix and BM25; no vector DB. At

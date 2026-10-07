@@ -42,3 +42,26 @@ def test_score_refusal_and_false_refusal():
     assert scores["r"]["correct"] and not scores["a"]["correct"]
     rows = summarize([refuse, agg], scores)
     assert rows["all"]["refusal_acc"] == 0.5 and rows["all"]["false_refusal"] == 1.0
+
+
+def test_phrase_rules_from_manual_review():
+    agg = {"id": "a", "type": "agg", "must_refuse": False, "expected_value": "AZ",
+           "lead_phrases": ["sample"], "forbidden_phrases": ["representative"]}
+    ok = "In the 3,000-record sample, AZ has the most.\n\nDetails follow."
+    assert score_item(agg, _result(ok))["correct"]
+    late = "AZ has the most.\n\nThese counts come from a sample."
+    assert "phrase up front: 'sample'" in score_item(agg, _result(late))["missing"]
+    bad = "In this representative sample, AZ has the most."
+    assert not score_item(agg, _result(bad))["correct"]
+    assert score_item(agg, _result("The sample is not representative; AZ leads."))["correct"]
+    assert score_item(agg, _result("A sample; it should not be considered representative. AZ."))["correct"]
+
+
+def test_partial_needs_not_covered_line_and_is_its_own_type():
+    part = {"id": "p", "type": "partial", "must_refuse": False, "expected_sections": ["56.15002"],
+            "required_phrases": ["Not covered:"]}
+    good = _result("Hard hats: § 56.15002.\nNot covered: training (30 CFR Part 46).", ["56.15002"])
+    assert score_item(part, good)["correct"]
+    assert not score_item(part, _result("Hard hats: § 56.15002.", ["56.15002"]))["correct"]
+    rows = summarize([part], {"p": score_item(part, good)})
+    assert rows["partial"]["answer_acc"] == 1.0
