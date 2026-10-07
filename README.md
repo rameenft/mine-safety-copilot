@@ -1,5 +1,14 @@
 # Mine Safety Copilot
 
+> **This is the `single-file` branch.** It adds the whole project as one notebook,
+> [`mine_safety_copilot.ipynb`](mine_safety_copilot.ipynb), and one script,
+> [`mine_safety_copilot.py`](mine_safety_copilot.py), generated from `src/` by
+> `scripts/build_single_file.py` (a test keeps them in sync). Run the notebook from an empty folder
+> in about a minute with a Gemini API key:
+> [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rameenft/mine-safety-copilot/blob/single-file/mine_safety_copilot.ipynb)
+>
+> Everything else is the same as [`main`](https://github.com/rameenft/mine-safety-copilot/tree/main), which is the primary version.
+
 ## Abstract
 
 Mine Safety Copilot is a question-answering assistant for US **surface metal/nonmetal mines**
@@ -185,7 +194,7 @@ python -m mine_copilot.ingest.build           # download + build the SQLite DB
 python -m mine_copilot.retrieval.build        # chunk + embed (--no-embed for BM25 only)
 python -m mine_copilot.agent "How high must berms be on haul roads?"
 streamlit run src/mine_copilot/app.py         # demo UI
-pytest -q                                     # 51 offline tests
+pytest -q                                     # 53 offline tests
 python evals/eval_agent.py --model gemini-3.8-flash   # eval (cached; --rescore offline)
 claude mcp add mine-safety-copilot -- "$PWD/.venv/bin/python" -m mine_copilot.mcp_server
 ```
@@ -197,9 +206,11 @@ For Claude Desktop, add `{"mcpServers": {"mine-safety-copilot": {"command":
 ## Repository layout
 
 ```
+mine_safety_copilot.ipynb / .py   the whole project in one file (generated)
+scripts/            build_single_file.py
 src/mine_copilot/   ingest/ retrieval/ agent/ llm.py config.py demo.py app.py mcp_server.py
 evals/              golden_set.yaml, build_golden.py, eval_*.py, reports/
-tests/              51 offline tests + fixtures/ (including rows that must be rejected)
+tests/              53 offline tests + fixtures/ (including rows that must be rejected)
 docs/               DATA_CARD.md (data and filters), DECISIONS.md (why), LEARNING_LOG.md
 ```
 
