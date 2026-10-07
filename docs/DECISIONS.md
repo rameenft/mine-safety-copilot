@@ -149,3 +149,6 @@ match the generator, and that the one-file agent gives the same results as the p
 fixtures. Run cells are guarded by `__main__`, so the test can load definitions without
 downloading anything. Verified end to end from an empty folder: 51 s including downloads and
 embedding, with all 4 example answers correct. Regenerating clears the notebook's saved outputs.
+
+> **Moved off `main`.** The generator, its test and the generated files now live on the
+> [`single-file`](https://github.com/rameenft/mine-safety-copilot/tree/single-file) branch, so `main` stays the package only.
